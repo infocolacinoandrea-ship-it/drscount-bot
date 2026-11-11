@@ -51,6 +51,20 @@ def image_url(post_id, suffix: str = "") -> str:
     return f"https://raw.githubusercontent.com/{config.REPO}/{config.BRANCH}/posts/{post_id}{suffix}.jpg"
 
 
+def publish_story(pid) -> str:
+    """Pubblica la storia del post (la crea se manca). Ritorna un testo per la notifica."""
+    story = POSTS / f"{pid}_story.jpg"
+    try:
+        if not story.exists():
+            render_story(POSTS / f"{pid}.jpg", story)
+            push_changes("bot: storia")
+            time.sleep(8)  # lascia a GitHub il tempo di rendere disponibile l'immagine
+        instagram.publish_image(image_url(pid, "_story"), story=True)
+        return "\n📲 Storia pubblicata"
+    except Exception as e:
+        return f"\n⚠️ Storia non pubblicata: {e}"
+
+
 def push_changes(msg: str = "bot: aggiornamento"):
     """Salva su GitHub immagini e stato, così Instagram può scaricare subito le immagini."""
     if not config.REPO:
@@ -66,18 +80,16 @@ def push_changes(msg: str = "bot: aggiornamento"):
         print(f"push non riuscito: {e}", file=sys.stderr)
 
 
-def publish_story(pid) -> str:
-    """Pubblica la storia del post (la crea se manca). Ritorna un testo per la notifica."""
-    story = POSTS / f"{pid}_story.jpg"
-    try:
-        if not story.exists():
-            render_story(POSTS / f"{pid}.jpg", story)
-            push_changes("bot: storia")
-            time.sleep(8)  # lascia a GitHub il tempo di rendere disponibile l'immagine
-        instagram.publish_image(image_url(pid, "_story"), story=True)
-        return "\n📲 Storia pubblicata"
-    except Exception as e:
-        return f"\n⚠️ Storia non pubblicata: {e}"
+def publish_now(s: dict, pid, caption: str) -> str:
+    """Pubblica post (+ storia) e ritorna il testo per la notifica. Solleva eccezione se il post fallisce."""
+    media_id = instagram.publish_image(image_url(pid), cap.normalize(caption))
+    s["published"][str(pid)] = media_id
+    s["last_post"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    link = instagram.permalink(media_id)
+    extra = ""
+    if config.AUTO_STORY:
+        extra = publish_story(pid) if instagram.publishing_room() > 1 else "\n⏸️ Storia saltata: limite giornaliero di Instagram"
+    return f"✅ Pubblicato su Instagram {link}".strip() + extra
 
 
 def handle_decisions(s: dict, wait: int = 0) -> bool:
@@ -93,12 +105,9 @@ def handle_decisions(s: dict, wait: int = 0) -> bool:
             continue
         bot.ack(cq, "Pubblico su Instagram…")
         try:
-            media_id = instagram.publish_image(image_url(pid), cap.normalize(p["caption"]))
-            s["published"][str(pid)] = media_id
-            link = instagram.permalink(media_id)
+            msg = publish_now(s, pid, p["caption"])
             bot.mark(p["message_id"], "✅ Pubblicato")
-            extra = publish_story(pid) if config.AUTO_STORY else ""
-            bot.notify(f"✅ Pubblicato su Instagram {link}".strip() + extra)
+            bot.notify(msg)
         except Exception as e:
             s["pending"][str(pid)] = p  # riprova al prossimo ✅
             bot.notify(f"⚠️ Pubblicazione non riuscita: {e}")
@@ -158,7 +167,36 @@ def maybe_refresh_token(s: dict):
         bot.notify(f"⚠️ Non riesco a rinnovare il token Instagram: {e}")
 
 
+def auto_publish(s: dict) -> bool:
+    """Pubblica direttamente la migliore offerta nuova, una alla volta e distanziate."""
+    last = s.get("last_post")
+    if last and dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(last) < dt.timedelta(
+            minutes=config.MIN_MINUTES_BETWEEN_POSTS):
+        return False
+    if instagram.publishing_room() < 1:
+        return False
+    today = dt.date.today().isoformat()
+    for o in pick_offers(s)[:1]:
+        s["seen"].append(o.post_id)
+        try:
+            path, text = make_post(o)
+            save_state(s)
+            push_changes("bot: nuovo post")
+            time.sleep(10)  # lascia a GitHub il tempo di rendere disponibile l'immagine
+            msg = publish_now(s, o.post_id, text)
+            s["daily"][today] = s["daily"].get(today, 0) + 1
+            bot.notify(f"{msg}\n🛒 {o.short_title} a {o.price} (-{o.discount}%)")
+            return True
+        except Exception as e:
+            print(f"Pubblicazione automatica non riuscita per {o.post_id}: {e}", file=sys.stderr)
+            bot.notify(f"⚠️ Non sono riuscito a pubblicare {o.short_title}: {e}")
+            return True
+    return False
+
+
 def send_new_previews(s: dict) -> bool:
+    if config.AUTO_PUBLISH:
+        return auto_publish(s)
     today = dt.date.today().isoformat()
     sent = False
     for o in pick_offers(s):
