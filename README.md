@@ -1,12 +1,14 @@
 # Dr.Scount bot: dal canale Telegram a Instagram
 
-Ogni 15 minuti, dalle 7 alle 23 circa, il bot:
+Dalle 7 alle 23 il bot resta sempre in ascolto e:
 
-1. legge il canale pubblico **t.me/drscount**;
-2. sceglie le offerte migliori tra quelle nuove. Conta lo sconto, il minimo storico, le stelle, le recensioni e un bonus per i prodotti per la casa;
-3. crea l'immagine 1080×1350 con il prodotto al centro, il prezzo in grande, il prezzo vecchio barrato, il logo e "OFFERTA NEL LINK IN BIO";
-4. ti manda l'anteprima su Telegram con i pulsanti **✅ Pubblica** e **❌ Scarta**;
-5. quando premi ✅, al giro successivo (entro circa 15 minuti) pubblica il post su Instagram con la caption e ti manda il link.
+1. ogni 10 minuti legge il canale pubblico **t.me/drscount**;
+2. prende le offerte nuove uscite nelle ultime 2 ore;
+3. crea l'immagine 1080×1350 (prodotto al centro, prezzo grande, prezzo vecchio barrato, logo, "OFFERTA NEL LINK IN BIO") e la storia 1080×1920;
+4. **pubblica direttamente** post e storia su Instagram, al massimo un post ogni 20 minuti e 20 al giorno;
+5. ti manda su Telegram un avviso con il link del post.
+
+Per tornare all'approvazione manuale (anteprima con ✅/❌) metti `AUTO_PUBLISH: "0"` nel file `.github/workflows/drscount.yml`.
 
 Il bot gira gratis su **GitHub Actions**, quindi non serve tenere un computer acceso.
 
