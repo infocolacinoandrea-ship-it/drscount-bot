@@ -51,3 +51,13 @@ def refresh_token() -> dict:
     """Allunga la validità del token (60 giorni). Va chiamata almeno una volta al mese."""
     return _check(requests.get("https://graph.instagram.com/refresh_access_token", params={
         "grant_type": "ig_refresh_token", "access_token": config.IG_TOKEN}, timeout=30))
+
+
+def publishing_room() -> int:
+    """Quanti contenuti si possono ancora pubblicare nelle 24 ore (limite di Instagram)."""
+    try:
+        d = _check(requests.get(f"{config.IG_API}/{config.IG_USER_ID}/content_publishing_limit", params={
+            "fields": "quota_usage,config", "access_token": config.IG_TOKEN}, timeout=30))["data"][0]
+        return int(d["config"]["quota_total"]) - int(d["quota_usage"])
+    except Exception:
+        return 99  # se non riesco a leggerlo, non blocco
