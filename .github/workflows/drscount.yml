@@ -2,7 +2,7 @@ name: Dr.Scount bot
 
 on:
   schedule:
-    - cron: "*/15 6-22 * * *"   # ogni 15 minuti, dalle 7 alle 23 circa (ora italiana)
+    - cron: "*/15 6-22 * * *"   # di scorta: riavvia il bot se la catena si interrompe
   workflow_dispatch: {}          # permette di lanciarlo a mano da GitHub
 
 concurrency:
@@ -11,11 +11,12 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 32
     steps:
       - uses: actions/checkout@v4
 
@@ -26,20 +27,32 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Giro del bot
+      - name: Configura git
+        run: |
+          git config user.name "drscount-bot"
+          git config user.email "drscount-bot@users.noreply.github.com"
+
+      - name: Giro del bot (resta in ascolto ~25 minuti)
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           TG_CHANNEL: drscount
+          LISTEN_MINUTES: "25"
         run: python src/main.py
 
       - name: Salva stato e immagini
         if: always()
         run: |
-          git config user.name "drscount-bot"
-          git config user.email "drscount-bot@users.noreply.github.com"
           [ -f state.json ] && git add state.json
           [ -d posts ] && git add posts
-          git diff --cached --quiet || (git commit -m "bot: aggiornamento" && git push)
+          git diff --cached --quiet || (git commit -m "bot: aggiornamento" && git pull --rebase -X theirs && git push)
+
+      - name: Rilancia il bot (dalle 7 alle 23)
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          H=$(TZ=Europe/Rome date +%-H)
+          if [ "$H" -ge 7 ] && [ "$H" -lt 23 ]; then gh workflow run drscount.yml --ref main; fi
