@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="Logo Dr.Scount: pacco mascotte vestito da dottore sotto la tenda di un negozio, con monete e cartellino sconto">
+<defs>
+<clipPath id="m-c"><circle cx="300" cy="300" r="284"></circle></clipPath>
+</defs>
+
+<!-- cornice e sfondo -->
+<circle cx="300" cy="300" r="298" fill="#16342A"></circle>
+<g clip-path="url(#m-c)">
+<rect width="600" height="600" fill="#FFC125"></rect>
+<g fill="#FFFFFF" opacity="0.35">
+<path d="M300 330 L262 60 L338 60 Z"></path><path d="M300 330 L470 110 L520 160 Z"></path><path d="M300 330 L560 300 L560 370 Z"></path>
+<path d="M300 330 L130 110 L80 160 Z"></path><path d="M300 330 L40 300 L40 370 Z"></path>
+</g>
+<!-- tenda del negozio -->
+<g stroke="#16342A" stroke-width="7" stroke-linejoin="round">
+<path d="M0 0 L600 0 L600 112 L0 112 Z" fill="#FFFFFF"></path>
+<path d="M0 0 L50 0 L50 112 L0 112 Z M100 0 L150 0 L150 112 L100 112 Z M200 0 L250 0 L250 112 L200 112 Z M300 0 L350 0 L350 112 L300 112 Z M400 0 L450 0 L450 112 L400 112 Z M500 0 L550 0 L550 112 L500 112 Z" fill="#E12D39" stroke="none"></path>
+<path d="M0 112 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0 q25 30 50 0" fill="#E12D39"></path>
+<path d="M50 112 q25 30 50 0 M150 112 q25 30 50 0 M250 112 q25 30 50 0 M350 112 q25 30 50 0 M450 112 q25 30 50 0 M550 112 q25 30 50 0" fill="#FFFFFF"></path>
+</g>
+<!-- banco/pavimento -->
+<rect x="0" y="448" width="600" height="160" fill="#1EA05A"></rect>
+<rect x="0" y="448" width="600" height="10" fill="#16342A" opacity="0.25"></rect>
+</g>
+<circle cx="300" cy="300" r="284" fill="none" stroke="#FFFFFF" stroke-width="8"></circle>
+
+<!-- monete che saltano fuori -->
+<g stroke="#16342A" stroke-width="6">
+<circle cx="250" cy="170" r="27" fill="#FFC125"></circle>
+<circle cx="250" cy="170" r="17" fill="none" stroke="#E0A10B" stroke-width="5"></circle>
+<circle cx="352" cy="152" r="31" fill="#FFC125"></circle>
+<circle cx="352" cy="152" r="20" fill="none" stroke="#E0A10B" stroke-width="5"></circle>
+</g>
+<g fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round">
+<path d="M238 160 A 14 14 0 0 1 252 154"></path>
+<path d="M338 140 A 16 16 0 0 1 354 133"></path>
+</g>
+
+<!-- ombra -->
+<ellipse cx="312" cy="440" rx="140" ry="14" fill="#16342A" opacity="0.25"></ellipse>
+
+<!-- pacco mascotte -->
+<g stroke="#16342A" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+<!-- lembi aperti -->
+<path d="M196 248 L236 224 L206 186 L160 210 Z" fill="#D9A86C"></path>
+<path d="M444 224 L404 248 L438 272 L478 248 Z" fill="#C8955B"></path>
+<path d="M236 224 L444 224 L420 196 L262 196 Z" fill="#B57F45"></path>
+<!-- lato -->
+<path d="M404 248 L444 224 L444 400 L404 430 Z" fill="#B57F45"></path>
+<!-- fronte -->
+<rect x="196" y="248" width="208" height="182" rx="10" fill="#D9A86C"></rect>
+</g>
+<!-- nastro adesivo sul fronte -->
+<rect x="282" y="252" width="36" height="58" fill="#EFD3A5"></rect>
+<path d="M196 248 L404 248" stroke="#16342A" stroke-width="8" stroke-linecap="round"></path>
+
+<!-- specchietto frontale da dottore -->
+<g stroke="#16342A" stroke-width="6">
+<path d="M206 262 Q300 236 394 262" fill="none" stroke-width="9"></path>
+<circle cx="244" cy="268" r="22" fill="#D7E0E4"></circle>
+<circle cx="244" cy="268" r="9" fill="#FFFFFF" stroke="none"></circle>
+</g>
+
+<!-- faccina -->
+<!-- occhi kawaii: grandi, neri, con doppio riflesso -->
+<ellipse cx="262" cy="338" rx="17" ry="21" fill="#16342A"></ellipse>
+<ellipse cx="342" cy="338" rx="17" ry="21" fill="#16342A"></ellipse>
+<circle cx="268" cy="329" r="7" fill="#FFFFFF"></circle>
+<circle cx="348" cy="329" r="7" fill="#FFFFFF"></circle>
+<circle cx="256" cy="347" r="3.5" fill="#FFFFFF"></circle>
+<circle cx="336" cy="347" r="3.5" fill="#FFFFFF"></circle>
+<!-- guance -->
+<ellipse cx="236" cy="370" rx="16" ry="10" fill="#FF8FA3" opacity="0.85"></ellipse>
+<ellipse cx="368" cy="370" rx="16" ry="10" fill="#FF8FA3" opacity="0.85"></ellipse>
+<!-- boccuccia a w -->
+<path d="M287 362 Q294.5 372 302 362 Q309.5 372 317 362" fill="none" stroke="#16342A" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+
+<!-- stetoscopio al collo -->
+<g fill="none" stroke="#16342A" stroke-width="7" stroke-linecap="round">
+<path d="M206 290 C 190 360, 220 408, 286 410"></path>
+<path d="M394 290 C 410 360, 380 408, 318 410"></path>
+</g>
+<circle cx="302" cy="412" r="16" fill="#D7E0E4" stroke="#16342A" stroke-width="6"></circle>
+
+<!-- braccio che saluta -->
+<g stroke="#16342A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M198 340 C 170 330, 152 300, 150 278" fill="none" stroke-width="12"></path>
+<circle cx="148" cy="266" r="17" fill="#D9A86C"></circle>
+</g>
+
+<!-- braccio con cartellino sconto -->
+<g stroke="#16342A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M440 330 C 462 334, 474 322, 482 306" fill="none" stroke-width="12"></path>
+<g transform="translate(512 242) rotate(18)">
+<path d="M-34 -40 L34 -40 L34 30 L0 58 L-34 30 Z" fill="#E12D39"></path>
+<circle cx="0" cy="-24" r="6" fill="#FFFFFF"></circle>
+</g>
+<circle cx="484" cy="304" r="15" fill="#B57F45"></circle>
+</g>
+<text x="0" y="0" transform="translate(509 266) rotate(18)" text-anchor="middle" font-family="Luckiest Guy" font-size="44" fill="#FFFFFF">%</text>
+
+<!-- nastro con il nome -->
+<g stroke="#16342A" stroke-width="7" stroke-linejoin="round">
+<path d="M84 482 L128 474 L120 502 L132 528 L88 526 L102 504 Z" fill="#A51E28"></path>
+<path d="M516 482 L472 474 L480 502 L468 528 L512 526 L498 504 Z" fill="#A51E28"></path>
+<path d="M112 462 Q300 432 488 462 L488 522 Q300 492 112 522 Z" fill="#E12D39"></path>
+</g>
+<text x="300" y="511" text-anchor="middle" font-family="Luckiest Guy" font-size="60" fill="#FFFFFF" stroke="#16342A" stroke-width="10" paint-order="stroke" letter-spacing="2">DR.SCOUNT</text>
+</svg>
