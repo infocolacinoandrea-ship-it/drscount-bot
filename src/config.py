@@ -37,6 +37,11 @@ ACTIVE_HOURS = (7, 23)  # ora italiana in cui il bot lavora
 # Dopo ogni post pubblica anche una storia con la stessa grafica
 AUTO_STORY = os.getenv("AUTO_STORY", "1") == "1"
 
+# Pubblicazione automatica senza approvazione (1 = sì)
+AUTO_PUBLISH = os.getenv("AUTO_PUBLISH", "0") == "1"
+# Minuti minimi tra un post e l'altro, per non pubblicare a raffica
+MIN_MINUTES_BETWEEN_POSTS = int(os.getenv("MIN_MINUTES_BETWEEN_POSTS", "20"))
+
 # Parole che fanno salire il punteggio: il focus della pagina è la casa
 HOME_KEYWORDS = [
     "casa", "cucina", "aspirapolvere", "robot", "friggitrice", "pentol", "padell",
