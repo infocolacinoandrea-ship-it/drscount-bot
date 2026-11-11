@@ -28,7 +28,7 @@ import instagram
 import scoring
 import scraper
 import telegram_bot as bot
-from render import render_post
+from render import render_post, render_story
 
 ROOT = Path(__file__).resolve().parent.parent
 STATE = ROOT / "state.json"
@@ -47,8 +47,8 @@ def save_state(s: dict):
     STATE.write_text(json.dumps(s, indent=1, ensure_ascii=False))
 
 
-def image_url(post_id: int) -> str:
-    return f"https://raw.githubusercontent.com/{config.REPO}/{config.BRANCH}/posts/{post_id}.jpg"
+def image_url(post_id, suffix: str = "") -> str:
+    return f"https://raw.githubusercontent.com/{config.REPO}/{config.BRANCH}/posts/{post_id}{suffix}.jpg"
 
 
 def push_changes(msg: str = "bot: aggiornamento"):
@@ -64,6 +64,20 @@ def push_changes(msg: str = "bot: aggiornamento"):
         subprocess.run(["git", "push", "-q"], cwd=ROOT, check=True)
     except Exception as e:
         print(f"push non riuscito: {e}", file=sys.stderr)
+
+
+def publish_story(pid) -> str:
+    """Pubblica la storia del post (la crea se manca). Ritorna un testo per la notifica."""
+    story = POSTS / f"{pid}_story.jpg"
+    try:
+        if not story.exists():
+            render_story(POSTS / f"{pid}.jpg", story)
+            push_changes("bot: storia")
+            time.sleep(8)  # lascia a GitHub il tempo di rendere disponibile l'immagine
+        instagram.publish_image(image_url(pid, "_story"), story=True)
+        return "\n📲 Storia pubblicata"
+    except Exception as e:
+        return f"\n⚠️ Storia non pubblicata: {e}"
 
 
 def handle_decisions(s: dict, wait: int = 0) -> bool:
@@ -83,7 +97,8 @@ def handle_decisions(s: dict, wait: int = 0) -> bool:
             s["published"][str(pid)] = media_id
             link = instagram.permalink(media_id)
             bot.mark(p["message_id"], "✅ Pubblicato")
-            bot.notify(f"✅ Pubblicato su Instagram {link}".strip())
+            extra = publish_story(pid) if config.AUTO_STORY else ""
+            bot.notify(f"✅ Pubblicato su Instagram {link}".strip() + extra)
         except Exception as e:
             s["pending"][str(pid)] = p  # riprova al prossimo ✅
             bot.notify(f"⚠️ Pubblicazione non riuscita: {e}")
@@ -122,6 +137,7 @@ def make_post(o: scraper.Offer) -> tuple[Path, str]:
     img = Image.open(io.BytesIO(scraper.download(o.photo_url)))
     out = render_post(img, o.short_title, o.price, o.old_price, o.discount, o.historic_low,
                       POSTS / f"{o.post_id}.jpg")
+    render_story(out, POSTS / f"{o.post_id}_story.jpg")
     return out, cap.build_caption(o)
 
 
