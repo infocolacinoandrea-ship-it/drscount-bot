@@ -15,11 +15,15 @@ def _check(r: requests.Response) -> dict:
     return data
 
 
-def publish_image(image_url: str, caption: str) -> str:
+def publish_image(image_url: str, caption: str = "", story: bool = False) -> str:
     base = f"{config.IG_API}/{config.IG_USER_ID}"
     tok = {"access_token": config.IG_TOKEN}
-    container = _check(requests.post(f"{base}/media", data={
-        "image_url": image_url, "caption": caption, **tok}, timeout=60))["id"]
+    data = {"image_url": image_url, **tok}
+    if story:
+        data["media_type"] = "STORIES"
+    else:
+        data["caption"] = caption
+    container = _check(requests.post(f"{base}/media", data=data, timeout=60))["id"]
 
     # Instagram scarica l'immagine: si aspetta che il contenitore sia pronto
     for _ in range(20):
