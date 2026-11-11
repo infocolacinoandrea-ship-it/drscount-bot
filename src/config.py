@@ -34,6 +34,9 @@ LISTEN_MINUTES = int(os.getenv("LISTEN_MINUTES", "0"))   # 0 = giro veloce e bas
 CHECK_OFFERS_EVERY_MIN = int(os.getenv("CHECK_OFFERS_EVERY_MIN", "10"))
 ACTIVE_HOURS = (7, 23)  # ora italiana in cui il bot lavora
 
+# Dopo ogni post pubblica anche una storia con la stessa grafica
+AUTO_STORY = os.getenv("AUTO_STORY", "1") == "1"
+
 # Parole che fanno salire il punteggio: il focus della pagina è la casa
 HOME_KEYWORDS = [
     "casa", "cucina", "aspirapolvere", "robot", "friggitrice", "pentol", "padell",
