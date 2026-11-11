@@ -1,0 +1,28 @@
+name: Aggiorna logo
+
+# Si lancia a mano: trasforma assets/logo.svg in assets/logo.png (usato nei post e nelle storie)
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  logo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepara strumenti e font
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q librsvg2-bin fontconfig
+          mkdir -p ~/.fonts
+          curl -sSL -o ~/.fonts/LuckiestGuy-Regular.ttf https://raw.githubusercontent.com/google/fonts/main/apache/luckiestguy/LuckiestGuy-Regular.ttf
+          fc-cache -f
+      - name: Crea logo.png
+        run: rsvg-convert -w 480 -h 480 assets/logo.svg -o assets/logo.png
+      - name: Salva
+        run: |
+          git config user.name "drscount-bot"
+          git config user.email "drscount-bot@users.noreply.github.com"
+          git add assets/logo.png
+          git diff --cached --quiet || (git commit -m "logo: aggiornato" && git pull --rebase && git push)
