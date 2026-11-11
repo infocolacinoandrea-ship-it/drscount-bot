@@ -61,7 +61,7 @@ def handle_decisions(s: dict):
             continue
         bot.ack(cq, "Pubblico su Instagram…")
         try:
-            media_id = instagram.publish_image(image_url(pid), p["caption"])
+            media_id = instagram.publish_image(image_url(pid), cap.normalize(p["caption"]))
             s["published"][str(pid)] = media_id
             link = instagram.permalink(media_id)
             bot.mark(p["message_id"], "✅ Pubblicato")
@@ -136,7 +136,7 @@ def run():
             except Exception as e:
                 print(f"Salto {o.post_id}: {e}", file=sys.stderr)
                 continue
-            mid = bot.send_preview(path, text + f"\n\n🔗 {o.link or ''}", o.post_id)
+            mid = bot.send_preview(path, text, o.post_id)
             s["pending"][str(o.post_id)] = {
                 "message_id": mid, "caption": text,
                 "created": dt.datetime.now(dt.timezone.utc).isoformat(),
