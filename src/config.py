@@ -29,6 +29,11 @@ MAX_PREVIEWS_PER_RUN = int(os.getenv("MAX_PREVIEWS_PER_RUN", "2"))
 MAX_PREVIEWS_PER_DAY = int(os.getenv("MAX_PREVIEWS_PER_DAY", "8"))
 LOOKBACK_HOURS = int(os.getenv("LOOKBACK_HOURS", "12"))
 
+# Modalità ascolto: ogni giro resta acceso e reagisce subito ai tuoi ✅
+LISTEN_MINUTES = int(os.getenv("LISTEN_MINUTES", "0"))   # 0 = giro veloce e basta
+CHECK_OFFERS_EVERY_MIN = int(os.getenv("CHECK_OFFERS_EVERY_MIN", "10"))
+ACTIVE_HOURS = (7, 23)  # ora italiana in cui il bot lavora
+
 # Parole che fanno salire il punteggio: il focus della pagina è la casa
 HOME_KEYWORDS = [
     "casa", "cucina", "aspirapolvere", "robot", "friggitrice", "pentol", "padell",
