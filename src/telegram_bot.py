@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 import requests
@@ -10,7 +11,17 @@ import config
 
 
 def _api(method: str, **kwargs):
-    r = requests.post(f"https://api.telegram.org/bot{config.BOT_TOKEN}/{method}", timeout=90, **kwargs)
+    # riprova fino a 4 volte se la connessione cade per un attimo
+    for attempt in range(4):
+        try:
+            r = requests.post(f"https://api.telegram.org/bot{config.BOT_TOKEN}/{method}", timeout=90, **kwargs)
+            break
+        except requests.exceptions.RequestException:
+            if attempt == 3:
+                raise
+            time.sleep(5 * (attempt + 1))
+            for f in (kwargs.get("files") or {}).values():
+                f.seek(0)
     data = r.json()
     if not data.get("ok"):
         raise RuntimeError(f"Telegram {method}: {data}")
