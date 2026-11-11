@@ -41,7 +41,11 @@ jobs:
           TG_CHANNEL: drscount
           LISTEN_MINUTES: "25"
           LOOKBACK_HOURS: "2"   # solo offerte pubblicate sul canale nelle ultime 2 ore
-          MAX_PREVIEWS_PER_DAY: "20"   # anteprime massime al giorno
+          MAX_PREVIEWS_PER_DAY: "20"   # post massimi al giorno
+          AUTO_PUBLISH: "1"            # pubblica senza approvazione
+          MIN_DISCOUNT: "0"            # nessun filtro: tutte le offerte del canale
+          MIN_RATING: "0"
+          MIN_REVIEWS: "0"
         run: python src/main.py
 
       - name: Salva stato e immagini
