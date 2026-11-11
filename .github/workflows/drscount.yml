@@ -40,6 +40,7 @@ jobs:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           TG_CHANNEL: drscount
           LISTEN_MINUTES: "25"
+          LOOKBACK_HOURS: "2"   # solo offerte pubblicate sul canale nelle ultime 2 ore
         run: python src/main.py
 
       - name: Salva stato e immagini
