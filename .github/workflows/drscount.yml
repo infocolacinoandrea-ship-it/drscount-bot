@@ -51,9 +51,12 @@ jobs:
           git diff --cached --quiet || (git commit -m "bot: aggiornamento" && git pull --rebase -X theirs && git push)
 
       - name: Rilancia il bot (dalle 7 alle 23)
-        if: success()
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
         run: |
+          # se il giro è andato male aspetta 2 minuti prima di ripartire
+          [ "$JOB_STATUS" != "success" ] && sleep 120
           H=$(TZ=Europe/Rome date +%-H)
           if [ "$H" -ge 7 ] && [ "$H" -lt 23 ]; then gh workflow run drscount.yml --ref main; fi
