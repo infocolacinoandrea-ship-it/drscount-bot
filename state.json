@@ -1,7 +1,9 @@
 {
  "seen": [
   30991,
-  30984
+  30984,
+  30989,
+  30986
  ],
  "pending": {
   "30991": {
@@ -13,12 +15,22 @@
    "message_id": 3,
    "caption": "🔥 ALPRO QUESTO È VEGETALE\n\n💰 A soli 10,64€ invece di 26,80€ (-61%)\n📉 MINIMO STORICO!\n\n👉 Il link per acquistare lo trovi sul nostro canale Telegram: LINK IN BIO!\nOgni giorno le offerte Amazon migliori, soprattutto per la casa 🏠\n\n#offerteamazon #amazonitalia #offerte #sconti #risparmio #casa #offertedelgiorno #drscount\n\nPrezzo rilevato il 11/11/2026 alle 16:50, può cambiare in qualsiasi momento. In qualità di Affiliato Amazon ricevo un guadagno dagli acquisti idonei.",
    "created": "2026-11-11T15:50:09.490212+00:00"
+  },
+  "30989": {
+   "message_id": 4,
+   "caption": "🔥 Oral-B iO 2 Spazzolino Elettrico\n\n💰 A soli 39,99€ invece di 129,99€ (-70%)\n\n👉 Il link per acquistare lo trovi sul nostro canale Telegram: LINK IN BIO!\nOgni giorno le offerte Amazon migliori, soprattutto per la casa 🏠\n\n#offerteamazon #amazonitalia #offerte #sconti #casa",
+   "created": "2026-11-11T15:56:20.279279+00:00"
+  },
+  "30986": {
+   "message_id": 5,
+   "caption": "🔥 HUAWEI WATCH FIT 4 Smartwatch\n\n💰 A soli 99,00€ invece di 169,00€ (-42%)\n📉 MINIMO STORICO!\n\n👉 Il link per acquistare lo trovi sul nostro canale Telegram: LINK IN BIO!\nOgni giorno le offerte Amazon migliori, soprattutto per la casa 🏠\n\n#offerteamazon #amazonitalia #offerte #sconti #casa",
+   "created": "2026-11-11T15:56:22.435055+00:00"
   }
  },
  "published": {},
  "tg_offset": 0,
  "daily": {
-  "2026-11-11": 2
+  "2026-11-11": 4
  },
  "last_refresh": ""
 }
