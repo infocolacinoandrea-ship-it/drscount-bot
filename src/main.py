@@ -13,8 +13,11 @@ import argparse
 import datetime as dt
 import io
 import json
+import subprocess
 import sys
+import time
 import traceback
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from PIL import Image
@@ -48,8 +51,23 @@ def image_url(post_id: int) -> str:
     return f"https://raw.githubusercontent.com/{config.REPO}/{config.BRANCH}/posts/{post_id}.jpg"
 
 
-def handle_decisions(s: dict):
-    decisions, s["tg_offset"] = bot.get_decisions(s["tg_offset"])
+def push_changes(msg: str = "bot: aggiornamento"):
+    """Salva su GitHub immagini e stato, così Instagram può scaricare subito le immagini."""
+    if not config.REPO:
+        return
+    try:
+        subprocess.run(["git", "add", "state.json", "posts"], cwd=ROOT, check=False, capture_output=True)
+        if subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=ROOT).returncode == 0:
+            return
+        subprocess.run(["git", "commit", "-q", "-m", msg], cwd=ROOT, check=True)
+        subprocess.run(["git", "pull", "-q", "--rebase", "-X", "theirs"], cwd=ROOT, check=False)
+        subprocess.run(["git", "push", "-q"], cwd=ROOT, check=True)
+    except Exception as e:
+        print(f"push non riuscito: {e}", file=sys.stderr)
+
+
+def handle_decisions(s: dict, wait: int = 0) -> bool:
+    decisions, s["tg_offset"] = bot.get_decisions(s["tg_offset"], wait)
     for action, pid, cq in decisions:
         p = s["pending"].pop(str(pid), None)
         if not p:
@@ -75,6 +93,7 @@ def handle_decisions(s: dict):
                 "reply_markup": json.dumps({"inline_keyboard": [[
                     {"text": "✅ Riprova", "callback_data": f"ok:{pid}"},
                     {"text": "❌ Scarta", "callback_data": f"no:{pid}"}]]})})
+    return bool(decisions)
 
 
 def expire_pending(s: dict):
@@ -123,26 +142,58 @@ def maybe_refresh_token(s: dict):
         bot.notify(f"⚠️ Non riesco a rinnovare il token Instagram: {e}")
 
 
+def send_new_previews(s: dict) -> bool:
+    today = dt.date.today().isoformat()
+    sent = False
+    for o in pick_offers(s):
+        s["seen"].append(o.post_id)
+        try:
+            path, text = make_post(o)
+        except Exception as e:
+            print(f"Salto {o.post_id}: {e}", file=sys.stderr)
+            continue
+        mid = bot.send_preview(path, text, o.post_id)
+        s["pending"][str(o.post_id)] = {
+            "message_id": mid, "caption": text,
+            "created": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }
+        s["daily"][today] = s["daily"].get(today, 0) + 1
+        sent = True
+    return sent
+
+
+def active_now() -> bool:
+    h = dt.datetime.now(ZoneInfo("Europe/Rome")).hour
+    return config.ACTIVE_HOURS[0] <= h < config.ACTIVE_HOURS[1]
+
+
 def run():
     s = load_state()
     try:
         handle_decisions(s)
         expire_pending(s)
-        today = dt.date.today().isoformat()
-        for o in pick_offers(s):
-            s["seen"].append(o.post_id)
-            try:
-                path, text = make_post(o)
-            except Exception as e:
-                print(f"Salto {o.post_id}: {e}", file=sys.stderr)
-                continue
-            mid = bot.send_preview(path, text, o.post_id)
-            s["pending"][str(o.post_id)] = {
-                "message_id": mid, "caption": text,
-                "created": dt.datetime.now(dt.timezone.utc).isoformat(),
-            }
-            s["daily"][today] = s["daily"].get(today, 0) + 1
+        send_new_previews(s)
         maybe_refresh_token(s)
+        save_state(s)
+        push_changes()
+        if not config.LISTEN_MINUTES or not active_now():
+            return
+        # Modalità ascolto: risponde ai pulsanti in pochi secondi
+        end = time.time() + config.LISTEN_MINUTES * 60
+        next_check = time.time() + config.CHECK_OFFERS_EVERY_MIN * 60
+        while time.time() < end - 60:
+            try:
+                changed = handle_decisions(s, wait=50)
+                if time.time() >= next_check:
+                    next_check = time.time() + config.CHECK_OFFERS_EVERY_MIN * 60
+                    expire_pending(s)
+                    changed = send_new_previews(s) or changed
+                if changed:
+                    save_state(s)
+                    push_changes()
+            except Exception as e:  # un errore di rete non deve fermare l'ascolto
+                print(f"errore nel ciclo di ascolto: {e}", file=sys.stderr)
+                time.sleep(10)
     finally:
         save_state(s)
 
