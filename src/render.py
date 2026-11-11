@@ -130,3 +130,41 @@ def render_post(product_img: Image.Image, title: str, price: str, old_price: str
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out_path, "JPEG", quality=92)
     return out_path
+
+
+SW, SH = 1080, 1920
+
+
+def render_story(post_path: Path, out_path: Path) -> Path:
+    """Storia 1080x1920: il post al centro su sfondo del brand, con invito al link in bio."""
+    post = Image.open(post_path).convert("RGB")
+    canvas = Image.new("RGB", (SW, SH), DARK)
+    # sfondo: il post sfocato e scurito, per un effetto "ricondiviso"
+    bg = post.resize((SW, int(post.height * SW / post.width)), Image.LANCZOS)
+    bg = bg.resize((int(bg.width * SH / bg.height * 1.0) or SW, SH), Image.LANCZOS) if bg.height < SH else bg
+    bg = bg.crop(((bg.width - SW) // 2, 0, (bg.width - SW) // 2 + SW, SH)).filter(ImageFilter.GaussianBlur(40))
+    canvas.paste(Image.blend(bg, Image.new("RGB", (SW, SH), DARK), 0.55), (0, 0))
+    d = ImageDraw.Draw(canvas)
+
+    d.text((SW // 2, 200), "NUOVA OFFERTA", font=font("Bold", 84), fill=GOLD, anchor="mm")
+    d.text((SW // 2, 285), "appena pubblicata sul profilo", font=font("Medium", 40), fill=WHITE, anchor="mm")
+
+    w = 900
+    h = int(post.height * w / post.width)
+    card = post.resize((w, h), Image.LANCZOS)
+    x, y = (SW - w) // 2, 380
+    sh = Image.new("L", (SW, SH), 0)
+    ImageDraw.Draw(sh).rounded_rectangle((x, y + 18, x + w, y + h + 18), 40, fill=120)
+    canvas.paste(Image.new("RGB", (SW, SH), (0, 0, 0)), (0, 0), sh.filter(ImageFilter.GaussianBlur(25)))
+    canvas.paste(card, (x, y), rounded_mask((w, h), 40))
+
+    by = y + h + 120
+    label = "TROVI IL LINK IN BIO"
+    f = font("Bold", 58)
+    tw = d.textlength(label, font=f)
+    d.rounded_rectangle(((SW - tw) / 2 - 50, by - 60, (SW + tw) / 2 + 50, by + 60), 60, fill=GOLD)
+    d.text((SW // 2, by), label, font=f, fill=DARK, anchor="mm")
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(out_path, "JPEG", quality=90)
+    return out_path
