@@ -186,10 +186,13 @@ def active_now() -> bool:
 def run():
     s = load_state()
     try:
-        handle_decisions(s)
-        expire_pending(s)
-        send_new_previews(s)
-        maybe_refresh_token(s)
+        try:
+            handle_decisions(s)
+            expire_pending(s)
+            send_new_previews(s)
+            maybe_refresh_token(s)
+        except Exception as e:  # un intoppo di rete non deve fermare il bot
+            print(f"errore nel primo controllo: {e}", file=sys.stderr)
         save_state(s)
         push_changes()
         if not config.LISTEN_MINUTES or not active_now():
