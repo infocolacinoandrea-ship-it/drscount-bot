@@ -80,8 +80,7 @@ Tutti i tempi stanno nel dizionario `CUES` in `render_reel.py`. Ogni voce è `(i
 - Fondo rosso `#E12D39` con una raggiera arancio-oro che gira a 25°/s.
 - **0,00 s:** esplodono insieme la card bianca del prodotto (in alto, inclinata di −4°), la stella gialla, la scritta "SOLO" e il prezzo nuovo gigante (rosso con bordo bianco, centrato in basso).
   - Effetti: flash bianco di 0,1 s, scossa dello schermo di 0,35 s, "pop" forte e "ding" da cassa.
-- **1,95 s:** "invece di <prezzo vecchio>" si gonfia.
-  - Da 2,40 s una barra rossa si disegna sulla sola cifra, in 0,3 s, con un secondo "ding".
+- **0,00 s:** insieme al prezzo nuovo compare anche "invece di <prezzo vecchio>", già barrato.
 
 **Transizione (3,27 – 3,59 s)**
 - Lo schermo-prezzo si rimpicciolisce fino all'85% e svanisce dentro la card del post.

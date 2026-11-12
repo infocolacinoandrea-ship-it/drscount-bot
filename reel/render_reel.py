@@ -3,7 +3,7 @@
 Scena 1 - "schermo-prezzo" (0 -> ~3.3 s), fondo rosso/arancio con raggiera che gira:
   0.00 s  card bianca del prodotto + stella gialla + "SOLO" + prezzo nuovo esplodono insieme
           (pop forte, "ding", flash bianco e scossa dello schermo)
-  1.95 s  "invece di <prezzo vecchio>" si gonfia; da 2.40 s la barra rossa si disegna sulla cifra
+  0.00 s  insieme compare anche "invece di <prezzo vecchio>", già barrato
 Transizione (3.27 -> 3.59 s): lo schermo-prezzo si rimpicciolisce dentro la card del post.
 Scena 2 - grafica del post (3.27 s -> fine), fondo crema con raggiera dorata:
   3.27 s  card prodotto (+ nastro MINIMO STORICO) e titolo esplodono insieme;
@@ -47,12 +47,12 @@ WHITE = (255, 255, 255)
 # Tempi (secondi): (inizio, durata in cui l'elemento resta "gonfio")
 CUES = {
     "new": (0.12, 1.70),    # prezzo nuovo + prodotto (scena 1)
-    "old": (1.95, 1.20),    # "invece di ..." (scena 1)
+    "old": (0.00, 1.70),    # "invece di ..." già barrato, insieme al prezzo nuovo (scena 1)
     "title": (3.27, 0.90),  # card + titolo (scena 2), coincide con il cambio scena
     "badge": (4.35, 1.20),  # badge sconto
     "cta": (5.75, 1.10),    # OFFERTA NEL LINK IN BIO
 }
-T_SWITCH = CUES["old"][0] + CUES["old"][1] + 0.12   # = 3.27 s
+T_SWITCH = 3.27   # cambio scena
 TRANSITION = 0.32
 TOTAL = CUES["cta"][0] + CUES["cta"][1] + 1.6        # = 8.45 s
 
@@ -178,8 +178,7 @@ def build_audio(path: Path):
             mix[i:i + len(x)] += x[: n - i]
     add(sfx_pop(big=True), CUES["new"][0])
     add(sfx_ding(), CUES["new"][0] + 0.25)
-    add(sfx_ding() * 0.6, CUES["old"][0] + 0.5)
-    for key in ("old", "title", "badge", "cta"):
+    for key in ("title", "badge", "cta"):
         add(sfx_pop(), CUES[key][0])
     # saturazione morbida + guadagno (~ -14.5 LUFS, livello consigliato per Instagram)
     mix = np.tanh(mix * 1.4) * 0.95
@@ -341,8 +340,8 @@ def price_scene(tt, s: Sprites):
     so = punch(tt, sto, duo, 1.3)
     oc = (W / 2, 1490)
     paste_scaled(c, s.b_old, oc, so)
-    if tt >= sto + 0.45:
-        k = min(1, (tt - sto - 0.45) / 0.3)
+    if tt >= sto:   # la barra c'è già da subito
+        k = 1
         tw = (s.b_old.width - 40) * so
         x0 = oc[0] - tw / 2 + tw * s.b_old_k - 6
         x1 = x0 + (oc[0] + tw / 2 + 6 - x0) * k
