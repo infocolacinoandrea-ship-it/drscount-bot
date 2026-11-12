@@ -32,16 +32,42 @@ class Offer:
 
     @property
     def short_title(self) -> str:
-        t = self.title.rstrip(". ")
-        parts = [p.strip() for p in re.split(r",| - | – |\|", t) if p.strip()]
-        t = parts[0]
-        for p in parts[1:]:
-            if len(t) >= 22:
-                break
-            t = f"{t} {p}"
-        if len(t) > 42:
-            t = t[:42].rsplit(" ", 1)[0] + "…"
-        return t
+        return clean_title(self.title)
+
+
+# Parole con cui un titolo non può finire ("Videocamera Blink con" -> "Videocamera Blink")
+_DANGLING = {"con", "per", "e", "ed", "di", "da", "del", "della", "dei", "degli", "delle", "a", "al", "alla",
+             "ai", "in", "su", "il", "lo", "la", "le", "i", "gli", "un", "una", "o", "+", "&", "-", "–", "/",
+             "senza", "tra", "fra", "with", "and", "for", "the", "of"}
+# Dove il titolo "naturale" del prodotto di solito finisce
+_BREAKS = re.compile(r"\s(?:con|per|senza|ideale|adatto|adatta|compatibile|include|incluso|inclusa)\s", re.I)
+
+
+def clean_title(title: str, max_len: int = 42) -> str:
+    """Titolo breve e sempre finito: niente frasi troncate, niente puntini, niente parole appese."""
+    t = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", title)        # via le parentesi: (ultimo modello)
+    t = re.sub(r"\.{2,}|…", "", t).strip(" .,-–|")
+    parts = [p.strip() for p in re.split(r",| - | – |\||;", t) if p.strip()]
+    if not parts:
+        return title.strip()[:max_len]
+    t = parts[0]
+    # se il primo pezzo è solo il marchio (es. "Dermolab - Crema viso..."), aggiunge il pezzo dopo
+    if len(t) < 14 and len(parts) > 1 and not parts[1].isupper():
+        t = f"{t} {parts[1]}"
+    # taglia alla prima "congiunzione" se il titolo è lungo (dopo c'è la descrizione, non il nome)
+    if len(t) > max_len:
+        m = _BREAKS.search(t, 12)
+        if m and m.start() >= 12:
+            t = t[: m.start()]
+    # se è ancora troppo lungo taglia sull'ultima parola intera
+    if len(t) > max_len:
+        t = t[: max_len + 1].rsplit(" ", 1)[0]
+    words = t.split()
+    while len(words) > 1 and words[-1].lower().strip(".,:;") in _DANGLING:
+        words.pop()
+    # parole TUTTE MAIUSCOLE -> Maiuscola iniziale (ALPRO BARISTA -> Alpro Barista)
+    words = [w.capitalize() if w.isalpha() and w.isupper() and len(w) > 3 else w for w in words]
+    return " ".join(words).strip(" .,:;-–/+&")
 
 
 def _to_int(s: str) -> int:
