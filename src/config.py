@@ -52,3 +52,6 @@ HOME_KEYWORDS = [
     "microonde", "termo", "stufa", "deumidificatore", "purificatore", "ventilatore",
     "tappeto", "tenda", "giardino", "attrezz", "trapano", "avvitatore", "arredo",
 ]
+
+# Alternanza reel + storia / post + storia (0 = solo post)
+REELS = os.getenv("REELS", "1") == "1"

@@ -25,7 +25,7 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt -r reel/requirements.txt
 
       - name: Configura git
         run: |
@@ -46,6 +46,7 @@ jobs:
           MIN_DISCOUNT: "0"            # nessun filtro: tutte le offerte del canale
           MIN_RATING: "0"
           MIN_REVIEWS: "0"
+          REELS: "1"                   # alterna reel + storia e post + storia
         run: python src/main.py
 
       - name: Salva stato e immagini

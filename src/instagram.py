@@ -39,6 +39,32 @@ def publish_image(image_url: str, caption: str = "", story: bool = False) -> str
     return res["id"]
 
 
+def publish_video(video_url: str, caption: str = "", story: bool = False, cover_url: str = "") -> str:
+    """Pubblica un reel (o una storia video). Instagram elabora il video: si aspetta FINISHED."""
+    base = f"{config.IG_API}/{config.IG_USER_ID}"
+    tok = {"access_token": config.IG_TOKEN}
+    data = {"video_url": video_url, **tok}
+    if story:
+        data["media_type"] = "STORIES"
+    else:
+        data.update(media_type="REELS", caption=caption, share_to_feed="true")
+        if cover_url:
+            data["cover_url"] = cover_url
+    container = _check(requests.post(f"{base}/media", data=data, timeout=60))["id"]
+    for _ in range(60):  # fino a ~5 minuti
+        time.sleep(5)
+        st = _check(requests.get(f"{config.IG_API}/{container}",
+                                 params={"fields": "status_code,status", **tok}, timeout=30))
+        if st.get("status_code") == "FINISHED":
+            break
+        if st.get("status_code") in ("ERROR", "EXPIRED"):
+            raise RuntimeError(f"Instagram non è riuscito a elaborare il video: {st}")
+    else:
+        raise RuntimeError("Instagram ci mette troppo a elaborare il video")
+    res = _check(requests.post(f"{base}/media_publish", data={"creation_id": container, **tok}, timeout=60))
+    return res["id"]
+
+
 def permalink(media_id: str) -> str:
     try:
         return _check(requests.get(f"{config.IG_API}/{media_id}", params={

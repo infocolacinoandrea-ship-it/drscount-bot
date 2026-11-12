@@ -31,6 +31,7 @@ import telegram_bot as bot
 from render import render_post, render_story
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))  # per importare il generatore dei reel (cartella reel/)
 STATE = ROOT / "state.json"
 POSTS = ROOT / "posts"
 
@@ -90,6 +91,54 @@ def publish_now(s: dict, pid, caption: str) -> str:
     if config.AUTO_STORY:
         extra = publish_story(pid) if instagram.publishing_room() > 1 else "\n⏸️ Storia saltata: limite giornaliero di Instagram"
     return f"✅ Pubblicato su Instagram {link}".strip() + extra
+
+
+MEDIA_BRANCH = "media"
+
+
+def push_media(files: list[Path]) -> str:
+    """Carica i video sul ramo 'media' del repo, che contiene solo l'ultimo reel
+    (viene sovrascritto ogni volta, così il repository non si gonfia). Ritorna l'URL base."""
+    def git(*a, inp=None):
+        return subprocess.run(["git", *a], cwd=ROOT, check=True, capture_output=True,
+                              text=True, input=inp).stdout.strip()
+    entries = "".join(f"100644 blob {git('hash-object', '-w', str(f))}\t{f.name}\n" for f in files)
+    tree = git("mktree", inp=entries)
+    commit = git("commit-tree", tree, "-m", "media: reel")
+    git("push", "-q", "-f", "origin", f"{commit}:refs/heads/{MEDIA_BRANCH}")
+    return f"https://raw.githubusercontent.com/{config.REPO}/{MEDIA_BRANCH}/"
+
+
+def make_reel(o: scraper.Offer) -> tuple[Path, Path]:
+    from reel.render_reel import render_reel
+    img = Image.open(io.BytesIO(scraper.download(o.photo_url)))
+    tmp = ROOT / "reels_tmp"
+    video, cover = tmp / f"{o.post_id}_reel.mp4", tmp / f"{o.post_id}_reel.jpg"
+    render_reel(img, o.short_title, o.price, o.old_price, o.discount, o.historic_low,
+                video, cover_path=cover)
+    return video, cover
+
+
+def publish_reel_now(s: dict, o: scraper.Offer, caption: str) -> str:
+    """Genera e pubblica il reel + la storia con lo stesso video."""
+    video, cover = make_reel(o)
+    base = push_media([video, cover])
+    time.sleep(10)  # lascia a GitHub il tempo di rendere disponibili i file
+    media_id = instagram.publish_video(base + video.name, cap.normalize(caption), cover_url=base + cover.name)
+    s["published"][str(o.post_id)] = media_id
+    s["last_post"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    link = instagram.permalink(media_id)
+    extra = ""
+    if config.AUTO_STORY:
+        if instagram.publishing_room() > 1:
+            try:
+                instagram.publish_video(base + video.name, story=True)
+                extra = "\n📲 Storia (video) pubblicata"
+            except Exception as e:
+                extra = f"\n⚠️ Storia non pubblicata: {e}"
+        else:
+            extra = "\n⏸️ Storia saltata: limite giornaliero di Instagram"
+    return f"🎬 Reel pubblicato su Instagram {link}".strip() + extra
 
 
 def handle_decisions(s: dict, wait: int = 0) -> bool:
@@ -179,11 +228,24 @@ def auto_publish(s: dict) -> bool:
     for o in pick_offers(s)[:1]:
         s["seen"].append(o.post_id)
         try:
-            path, text = make_post(o)
-            save_state(s)
-            push_changes("bot: nuovo post")
-            time.sleep(10)  # lascia a GitHub il tempo di rendere disponibile l'immagine
-            msg = publish_now(s, o.post_id, text)
+            text = cap.build_caption(o)
+            msg = None
+            # Alternanza: un'offerta come reel + storia, la successiva come post + storia
+            if config.REELS and s.get("next_format", "reel") == "reel":
+                save_state(s)
+                try:
+                    msg = publish_reel_now(s, o, text)
+                    s["next_format"] = "post"
+                except Exception as e:
+                    print(f"Reel non riuscito per {o.post_id}: {e}", file=sys.stderr)
+                    bot.notify(f"⚠️ Reel non riuscito ({e}), pubblico come post")
+            if msg is None:
+                path, text = make_post(o)
+                save_state(s)
+                push_changes("bot: nuovo post")
+                time.sleep(10)  # lascia a GitHub il tempo di rendere disponibile l'immagine
+                msg = publish_now(s, o.post_id, text)
+                s["next_format"] = "reel"
             s["daily"][today] = s["daily"].get(today, 0) + 1
             bot.notify(f"{msg}\n🛒 {o.short_title} a {o.price} (-{o.discount}%)")
             return True
