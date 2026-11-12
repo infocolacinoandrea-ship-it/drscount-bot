@@ -2,7 +2,7 @@ name: Dr.Scount bot
 
 on:
   schedule:
-    - cron: "*/15 6-22 * * *"   # di scorta: riavvia il bot se la catena si interrompe
+    - cron: "*/30 * * * *"   # di scorta: riavvia il bot se la catena si interrompe
   workflow_dispatch: {}          # permette di lanciarlo a mano da GitHub
 
 concurrency:
@@ -55,7 +55,7 @@ jobs:
           [ -d posts ] && git add posts
           git diff --cached --quiet || (git commit -m "bot: aggiornamento" && git pull --rebase -X theirs && git push)
 
-      - name: Rilancia il bot (dalle 7 alle 23)
+      - name: Rilancia il bot (sempre, di notte il giro aspetta e basta)
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,5 +63,4 @@ jobs:
         run: |
           # se il giro è andato male aspetta 2 minuti prima di ripartire
           [ "$JOB_STATUS" != "success" ] && sleep 120
-          H=$(TZ=Europe/Rome date +%-H)
-          if [ "$H" -ge 7 ] && [ "$H" -lt 23 ]; then gh workflow run drscount.yml --ref main; fi
+          gh workflow run drscount.yml --ref main

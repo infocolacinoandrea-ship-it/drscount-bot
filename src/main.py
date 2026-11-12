@@ -221,7 +221,21 @@ def active_now() -> bool:
     return config.ACTIVE_HOURS[0] <= h < config.ACTIVE_HOURS[1]
 
 
+def seconds_until_active() -> float:
+    now = dt.datetime.now(ZoneInfo("Europe/Rome"))
+    start = now.replace(hour=config.ACTIVE_HOURS[0], minute=0, second=0, microsecond=0)
+    if now >= start:
+        start += dt.timedelta(days=1)
+    return (start - now).total_seconds()
+
+
 def run():
+    if not active_now():
+        # Di notte non pubblica: aspetta (al massimo un giro) e poi il workflow si rilancia da solo,
+        # così la mattina il bot è già acceso alle 7 senza dipendere dai controlli programmati di GitHub.
+        if config.LISTEN_MINUTES:
+            time.sleep(min(config.LISTEN_MINUTES * 60, seconds_until_active() + 5))
+        return
     s = load_state()
     try:
         try:
@@ -233,12 +247,12 @@ def run():
             print(f"errore nel primo controllo: {e}", file=sys.stderr)
         save_state(s)
         push_changes()
-        if not config.LISTEN_MINUTES or not active_now():
+        if not config.LISTEN_MINUTES:
             return
         # Modalità ascolto: risponde ai pulsanti in pochi secondi
         end = time.time() + config.LISTEN_MINUTES * 60
         next_check = time.time() + config.CHECK_OFFERS_EVERY_MIN * 60
-        while time.time() < end - 60:
+        while time.time() < end - 60 and active_now():
             try:
                 changed = handle_decisions(s, wait=50)
                 if time.time() >= next_check:
