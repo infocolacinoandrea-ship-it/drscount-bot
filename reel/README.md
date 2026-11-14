@@ -79,7 +79,7 @@ Tutti i tempi stanno nel dizionario `CUES` in `render_reel.py`. Ogni voce è `(i
 **Scena 1, "schermo-prezzo" (0 – 3,27 s)**
 - Fondo rosso `#E12D39` con una raggiera arancio-oro che gira a 25°/s.
 - **0,00 s:** esplodono insieme la card bianca del prodotto (in alto, inclinata di −4°), la stella gialla, la scritta "SOLO" e il prezzo nuovo gigante (rosso con bordo bianco, centrato in basso).
-  - Effetti: flash bianco di 0,1 s, "pop" forte e "ding" da cassa.
+  - Effetti: flash bianco di 0,1 s, scossa dello schermo di 0,35 s, "pop" forte e "ding" da cassa.
 - **0,00 s:** insieme al prezzo nuovo compare anche "invece di <prezzo vecchio>", già barrato.
 
 **Transizione (3,27 – 3,59 s)**
@@ -88,15 +88,15 @@ Tutti i tempi stanno nel dizionario `CUES` in `render_reel.py`. Ogni voce è `(i
 **Scena 2, grafica del post (3,27 s – fine)**
 - Fondo crema `#F7F4EC` con una raggiera dorata che gira a 12°/s.
 - Intestazione: logo e "DR.SCOUNT – le offerte migliori, ogni giorno".
-- **3,27 s:** la card del prodotto, il nastro "MINIMO STORICO" e il titolo esplodono insieme. Prezzo nuovo (verde), prezzo vecchio barrato e stella sono già al loro posto.
+- **3,27 s:** la card del prodotto, il nastro "MINIMO STORICO" e il titolo esplodono insieme. La stella è già al suo posto, con il prezzo nuovo (verde) al centro e il prezzo vecchio barrato sopra.
 - **4,35 s:** il badge "−XX%" si gonfia.
-- **5,75 s:** compare la pillola "OFFERTA NEL LINK IN BIO ↑".
+- **5,75 s:** compare la pillola "OFFERTA NEL LINK IN BIO ↑", che poi pulsa.
 - **~8,45 s:** fine, sull'accordo finale del jingle.
 
 **Come "si gonfia" un elemento (`punch`)**
 - Esplode in 0,14 s fino al picco, che va da ×1,2 a ×1,45 secondo l'elemento.
-- Resta gonfio e fermo per la durata indicata.
-- Si sgonfia con un rimbalzo in 0,35 s e poi resta fermo.
+- Resta gonfio, fermo, per la durata indicata.
+- Si sgonfia con un rimbalzo in 0,35 s, poi "respira" leggermente.
 
 **Audio**
 - Jingle synth anni '80 a 128 BPM, con il giro Do–Sol–Lam–Fa.

@@ -2,14 +2,14 @@
 
 Scena 1 - "schermo-prezzo" (0 -> ~3.3 s), fondo rosso/arancio con raggiera che gira:
   0.00 s  card bianca del prodotto + stella gialla + "SOLO" + prezzo nuovo esplodono insieme
-          (pop forte, "ding" e flash bianco)
+          (pop forte, "ding", flash bianco e scossa dello schermo)
   0.00 s  insieme compare anche "invece di <prezzo vecchio>", già barrato
 Transizione (3.27 -> 3.59 s): lo schermo-prezzo si rimpicciolisce dentro la card del post.
 Scena 2 - grafica del post (3.27 s -> fine), fondo crema con raggiera dorata:
   3.27 s  card prodotto (+ nastro MINIMO STORICO) e titolo esplodono insieme;
-          prezzo nuovo/vecchio già al loro posto sulla stella
+          prezzo nuovo al centro della stella, prezzo vecchio barrato sopra
   4.35 s  badge "-XX%" si gonfia
-  5.75 s  pillola "OFFERTA NEL LINK IN BIO" compare con un ingrandimento
+  5.75 s  pillola "OFFERTA NEL LINK IN BIO" compare e poi pulsa
   ~8.45 s fine (accordo "ta-dan" del jingle)
 
 Uso:
@@ -124,8 +124,8 @@ def ease_out_back(x, k=2.2):
 
 
 def punch(t, start, dur, peak=1.4):
-    """Scala di un elemento: esplode (0.14 s), resta gonfio e fermo per `dur`,
-    poi si sgonfia con rimbalzo (0.35 s) e resta fermo. Niente tremolii."""
+    """Scala di un elemento: esplode (0.14 s), resta gonfio (fermo) per `dur`,
+    si sgonfia con rimbalzo (0.35 s) e poi "respira"."""
     if t < start:
         return 0.0
     u = t - start
@@ -136,7 +136,7 @@ def punch(t, start, dur, peak=1.4):
     v = u - dur
     if v < 0.35:
         return 1 + (peak - 1) * (1 - ease_out_back(v / 0.35, 1.8))
-    return 1.0
+    return 1.0 + 0.015 * math.sin(v * 2 * math.pi * 1.2)
 
 
 def paste_scaled(canvas, spr, center, scale, angle=0.0):
@@ -234,11 +234,14 @@ class Sprites:
         self.title = sprite_text(title, tf, DARK)
         self.title_peak = min(1.25, (W - 30) / self.title.width)   # non esce mai dai bordi
 
-        self.new = sprite_text(price, font("Bold", 165), GREEN, stroke=6, stroke_fill=WHITE)
-        self.old = sprite_text(old_price, font("Medium", 66), GREY)
-        tot = self.new.width + 30 + self.old.width - 40
-        self.new_c = ((W - tot) / 2 + self.new.width / 2, 1365)
-        self.old_c = ((W - tot) / 2 + self.new.width + 30 + self.old.width / 2 - 40, 1383)
+        # prezzo nuovo al centro della stella, prezzo vecchio barrato sopra di lui
+        fn = font("Bold", 165)
+        while tmp.textlength(price, font=fn) > 620:
+            fn = font("Bold", fn.size - 6)
+        self.new = sprite_text(price, fn, GREEN, stroke=6, stroke_fill=WHITE)
+        self.old = sprite_text(old_price, font("Medium", 54), GREY)
+        self.new_c = (W / 2, 1400)
+        self.old_c = (W / 2, 1272)
         self.star = starburst(300, 235, 20, GOLD + (255,), DARK).resize((900, 330), Image.LANCZOS)
         self.bg_rays = rays(2600, 24, GOLD, 55)
 
@@ -303,10 +306,10 @@ def post_scene(tt, s: Sprites):
     if s.pill is not None and tt > t0 + 0.2:
         paste_scaled(c, s.pill, (s.card[0] + 36 + s.pill.width / 2, s.card[1] + 73),
                      punch(tt, t0 + 0.2, 0.05, 1.15))
-    paste_scaled(c, s.star, (W / 2, s.new_c[1]), 1.0)
+    paste_scaled(c, s.star, (W / 2, 1368), 1.0, angle=4 * math.sin(tt * 3))
     paste_scaled(c, s.old, s.old_c, 1.0)
     strike(c, s.old_c, s.old, 1.0)
-    paste_scaled(c, s.new, s.new_c, 1.0)
+    paste_scaled(c, s.new, s.new_c, 1.0 + 0.02 * math.sin(tt * 5))
     st, du = CUES["title"]
     paste_scaled(c, s.title, (W / 2, 1140), punch(tt, st, du, s.title_peak))
     if s.badge is not None:
@@ -315,7 +318,11 @@ def post_scene(tt, s: Sprites):
                      angle=-8)
     st, du = CUES["cta"]
     if tt >= st:
-        paste_scaled(c, s.cta, s.cta_c, punch(tt, st, du, 1.25))
+        u = tt - st
+        sc = punch(tt, st, du, 1.25)
+        if u > du + 0.35:
+            sc *= 1 + 0.05 * max(0, math.sin(u * 2 * math.pi * 1.6))
+        paste_scaled(c, s.cta, s.cta_c, sc)
     return c
 
 
@@ -325,9 +332,10 @@ def price_scene(tt, s: Sprites):
     r = s.b_rays.rotate(tt * 25, resample=Image.BILINEAR)
     c.alpha_composite(r, (int(W / 2 - r.width / 2), int(900 - r.height / 2)))
     st, du = CUES["new"]
-    paste_scaled(c, s.b_prod, (W / 2, 590), punch(tt, st - 0.12, du, 1.12),
-                 angle=-4)
-    paste_scaled(c, s.b_star, (W / 2, 1250), punch(tt, st - 0.12, du, 1.0))
+    paste_scaled(c, s.b_prod, (W / 2, 590), punch(tt, st - 0.12, du, 1.12) * (1 + 0.02 * math.sin(tt * 4)),
+                 angle=-4 + 2 * math.sin(tt * 2.5))
+    paste_scaled(c, s.b_star, (W / 2, 1250), punch(tt, st - 0.12, du, 1.0) * (1 + 0.03 * math.sin(tt * 8)),
+                 angle=tt * 18)
     paste_scaled(c, s.b_solo, (W / 2, 1060), punch(tt, st - 0.12, 0.45, 1.25), angle=-6)
     paste_scaled(c, s.b_new, (W / 2, 1240), punch(tt, st, du, 1.2),
                  angle=-4)
@@ -358,6 +366,9 @@ def frame(tt, s: Sprites, rng: random.Random) -> Image.Image:
                          1 - 0.85 * k)
     img = img.convert("RGB")
     u = tt - CUES["new"][0]
+    if 0 <= u < 0.35:   # scossa
+        a = 20 * (1 - u / 0.35)
+        img = ImageChops.offset(img, int(rng.uniform(-a, a)), int(rng.uniform(-a, a)))
     if 0 <= u < 0.1:    # flash
         img = Image.blend(img, Image.new("RGB", (W, H), WHITE), 0.4 * (1 - u / 0.1))
     return img
