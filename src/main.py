@@ -119,6 +119,28 @@ def make_reel(o: scraper.Offer) -> tuple[Path, Path]:
     return video, cover
 
 
+def publish_reel_story(o: scraper.Offer, video_url: str) -> str:
+    """Storia dopo il reel: prova col video (2 tentativi, Instagram a volte fallisce
+    l'elaborazione); se non va, ripiega sulla storia-immagine con la grafica del post."""
+    err = None
+    for attempt in range(2):
+        try:
+            instagram.publish_video(video_url, story=True)
+            return "\n📲 Storia (video) pubblicata"
+        except Exception as e:
+            err = e
+            print(f"Storia video non riuscita (tentativo {attempt + 1}): {e}", file=sys.stderr)
+            time.sleep(20)
+    try:
+        make_post(o)  # crea anche l'immagine della storia
+        push_changes("bot: storia di riserva")
+        time.sleep(8)
+        instagram.publish_image(image_url(o.post_id, "_story"), story=True)
+        return "\n📲 Storia pubblicata (immagine: il video non è stato accettato da Instagram)"
+    except Exception as e:
+        return f"\n⚠️ Storia non pubblicata: {err} / {e}"
+
+
 def publish_reel_now(s: dict, o: scraper.Offer, caption: str) -> str:
     """Genera e pubblica il reel + la storia con lo stesso video."""
     video, cover = make_reel(o)
@@ -131,11 +153,7 @@ def publish_reel_now(s: dict, o: scraper.Offer, caption: str) -> str:
     extra = ""
     if config.AUTO_STORY:
         if instagram.publishing_room() > 1:
-            try:
-                instagram.publish_video(base + video.name, story=True)
-                extra = "\n📲 Storia (video) pubblicata"
-            except Exception as e:
-                extra = f"\n⚠️ Storia non pubblicata: {e}"
+            extra = publish_reel_story(o, base + video.name)
         else:
             extra = "\n⏸️ Storia saltata: limite giornaliero di Instagram"
     return f"🎬 Reel pubblicato su Instagram {link}".strip() + extra
