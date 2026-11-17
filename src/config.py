@@ -41,6 +41,7 @@ AUTO_STORY = os.getenv("AUTO_STORY", "1") == "1"
 AUTO_PUBLISH = os.getenv("AUTO_PUBLISH", "0") == "1"
 # Minuti minimi tra un post e l'altro, per non pubblicare a raffica
 MIN_MINUTES_BETWEEN_POSTS = int(os.getenv("MIN_MINUTES_BETWEEN_POSTS", "20"))
+JITTER_MINUTES = int(os.getenv("JITTER_MINUTES", "0"))  # margine casuale aggiunto alla pausa
 
 # Parole che fanno salire il punteggio: il focus della pagina è la casa
 HOME_KEYWORDS = [

@@ -41,7 +41,9 @@ jobs:
           TG_CHANNEL: drscount
           LISTEN_MINUTES: "25"
           LOOKBACK_HOURS: "2"   # solo offerte pubblicate sul canale nelle ultime 2 ore
-          MAX_PREVIEWS_PER_DAY: "20"   # post massimi al giorno
+          MAX_PREVIEWS_PER_DAY: "8"    # contenuti massimi al giorno (ridotto dopo il blocco Meta del 17/11)
+          MIN_MINUTES_BETWEEN_POSTS: "90"  # pausa minima tra due contenuti
+          JITTER_MINUTES: "60"         # + da 0 a 60 minuti casuali
           AUTO_PUBLISH: "1"            # pubblica senza approvazione
           MIN_DISCOUNT: "0"            # nessun filtro: tutte le offerte del canale
           MIN_RATING: "0"

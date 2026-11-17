@@ -13,6 +13,7 @@ import argparse
 import datetime as dt
 import io
 import json
+import random
 import subprocess
 import sys
 import time
@@ -237,8 +238,12 @@ def maybe_refresh_token(s: dict):
 def auto_publish(s: dict) -> bool:
     """Pubblica direttamente la migliore offerta nuova, una alla volta e distanziate."""
     last = s.get("last_post")
+    # Pausa variabile tra un contenuto e l'altro (ritmo meno "da robot"):
+    # il margine casuale viene estratto una volta per pausa e salvato nello stato.
+    if "next_gap" not in s:
+        s["next_gap"] = config.MIN_MINUTES_BETWEEN_POSTS + random.randint(0, config.JITTER_MINUTES)
     if last and dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(last) < dt.timedelta(
-            minutes=config.MIN_MINUTES_BETWEEN_POSTS):
+            minutes=s["next_gap"]):
         return False
     if instagram.publishing_room() < 1:
         return False
@@ -265,6 +270,7 @@ def auto_publish(s: dict) -> bool:
                 msg = publish_now(s, o.post_id, text)
                 s["next_format"] = "reel"
             s["daily"][today] = s["daily"].get(today, 0) + 1
+            s.pop("next_gap", None)  # nuova pausa casuale per il prossimo contenuto
             bot.notify(f"{msg}\n🛒 {o.short_title} a {o.price} (-{o.discount}%)")
             return True
         except Exception as e:
