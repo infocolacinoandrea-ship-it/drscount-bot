@@ -228,5 +228,6 @@
  },
  "last_refresh": "",
  "last_post": "2026-11-19T08:52:19.046764+00:00",
- "next_format": "post"
+ "next_format": "post",
+ "next_gap": 96
 }
