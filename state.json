@@ -285,5 +285,6 @@
  },
  "last_refresh": "",
  "last_post": "2026-11-22T15:26:49.410220+00:00",
- "next_format": "reel"
+ "next_format": "reel",
+ "next_gap": 96
 }
