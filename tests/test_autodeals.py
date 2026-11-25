@@ -109,4 +109,11 @@ assert [x.asin for x in engine.pick([f1, f2, o1], cfgc, {}, limit=3)] == ["o1", 
 # non due offerte di fila della stessa marca, nemmeno fra un controllo e l'altro
 m1, m2 = mk("m1", 60, "casa", title="Dixan Detersivo Lavatrice 100"), mk("m2", 59, "casa", title="Dixan Ammorbidente 80")
 assert engine.pick([m1, m2], cfgc, {"deals_last_brand": "dixan"}, limit=2) == []
+# elettrodomestici: solo super offerte (60%+), 1 al giorno
+cfge = settings.load({})
+assert cfge["categorie"]["elettrodomestici"]["max_giorno"] == 1 and settings.min_discount(cfge, "elettrodomestici") == 60
+assert settings.min_discount(cfge, "casa") == 40
+lav50, lav65, lav70 = (mk("w1", 50, "elettrodomestici", price=300), mk("w2", 65, "elettrodomestici", price=300),
+                       mk("w3", 70, "elettrodomestici", price=400, title="Samsung Frigorifero Combinato"))
+assert [x.asin for x in engine.pick([lav50, lav65, lav70], cfge, {}, limit=3)] == ["w3"]   # il 50% non passa, ne esce 1 solo
 print("tutto ok")

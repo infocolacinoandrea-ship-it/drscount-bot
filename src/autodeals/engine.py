@@ -6,6 +6,7 @@ from scraper import clean_title
 
 import re
 
+from . import settings
 from .categories import CATEGORIES
 from .client import PARTNER_TAG, CreatorsClient
 
@@ -95,7 +96,7 @@ def fits_category(d: Deal) -> bool:
 
 def passes(d: Deal, cfg: dict) -> bool:
     """Filtri generali (le quote giornaliere si applicano dopo)."""
-    if not (cfg["sconto_min"] <= d.discount <= cfg["sconto_max"]):
+    if not (settings.min_discount(cfg, d.category) <= d.discount <= cfg["sconto_max"]):
         return False
     if not (cfg["prezzo_min"] <= d.price <= cfg["prezzo_max"]):
         return False
@@ -229,7 +230,7 @@ def scan(client: CreatorsClient, cfg: dict, state: dict, per_category: int = 2) 
         for entry in plan:
             kw, _, idx = entry.partition("|")   # "parola|Indice" per cambiare indice
             try:
-                items = client.search(kw, idx or cat["index"], min_saving=cfg["sconto_min"])
+                items = client.search(kw, idx or cat["index"], min_saving=settings.min_discount(cfg, cid))
             except RuntimeError as e:
                 print(f"[bot-offerte] {cid}/{kw}: {e}")
                 continue

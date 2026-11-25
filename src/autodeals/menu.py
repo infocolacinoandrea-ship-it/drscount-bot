@@ -74,12 +74,17 @@ def render(page: str, cfg: dict) -> tuple[str, dict]:
     if page.startswith("c:"):
         cid = page[2:]
         c, v = CATEGORIES[cid], cfg["categorie"][cid]
+        own = v.get("sconto_min")
         return (f"📦 {c['label'].upper()}\n\nStato: {'ACCESA' if v['attiva'] else 'SPENTA'}\n"
-                f"Offerte al giorno: {v['max_giorno']}",
+                f"Offerte al giorno: {v['max_giorno']}\n"
+                f"Sconto minimo: {own if own is not None else cfg['sconto_min']}%"
+                f"{' (solo per questa categoria)' if own is not None else ' (quello generale)'}",
                 {"inline_keyboard": [
                     [_b("✅ Accesa — tocca per spegnere" if v["attiva"] else "❌ Spenta — tocca per accendere",
                         f"c:{cid}:t", "success" if v["attiva"] else "danger")],
                     _pair("➖ Una in meno al giorno", f"c:{cid}:-", "➕ Una in più al giorno", f"c:{cid}:+"),
+                    _pair("➖ Sconto min −5%", f"c:{cid}:sm-", "➕ Sconto min +5%", f"c:{cid}:sm+"),
+                    [_b("↩️ Usa lo sconto generale", f"c:{cid}:smr")],
                     _back("cat")]})
     # pagina principale
     cats = [c["label"] for cid, c in CATEGORIES.items() if cfg["categorie"][cid]["attiva"]]
@@ -120,6 +125,12 @@ def apply(data: str, settings: dict) -> str:
             v = settings["categorie"][cid]
             if act == "t":
                 v["attiva"] = not v["attiva"]
+            elif act in ("sm+", "sm-"):
+                base = v.get("sconto_min")
+                base = settings["sconto_min"] if base is None else base
+                v["sconto_min"] = max(5, min(95, base + (5 if act == "sm+" else -5)))
+            elif act == "smr":
+                v["sconto_min"] = None
             else:
                 v["max_giorno"] = max(0, min(50, v["max_giorno"] + (1 if act == "+" else -1)))
         return f"c:{cid}"

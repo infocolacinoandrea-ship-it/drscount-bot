@@ -16,8 +16,15 @@ DEFAULTS = {
     "max_per_giro": 2,           # offerte pubblicate a ogni controllo
     "ogni_minuti": 30,           # ogni quanto cerca
     "canale": "-1005617414476",  # canale di TEST (Dr.scount test); si cambia quando sei pronto
-    "categorie": {c: {"attiva": True, "max_giorno": DEFAULT_QUOTAS.get(c, 3)} for c in CATEGORIES},
+    # sconto_min: None = usa quello generale; un numero = soglia propria della categoria
+    "categorie": {c: {"attiva": True, "max_giorno": DEFAULT_QUOTAS.get(c, 3), "sconto_min": None} for c in CATEGORIES},
 }
+DEFAULTS["categorie"]["elettrodomestici"].update({"max_giorno": 1, "sconto_min": 60})   # solo super offerte
+
+
+def min_discount(cfg: dict, category: str) -> int:
+    v = (cfg["categorie"].get(category) or {}).get("sconto_min")
+    return cfg["sconto_min"] if v is None else v
 
 
 def load(state: dict) -> dict:

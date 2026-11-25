@@ -71,6 +71,9 @@ def _migrate(s: dict):
     saved = s.setdefault("settings", {})
     if saved.get("_v", 0) < 2:       # 25/11: una offerta ogni ora
         saved.update({"ogni_minuti": 60, "max_per_giro": 1, "_v": 2})
+    if saved.get("_v", 0) < 3:       # 25/11: elettrodomestici solo super offerte (min 60%, 1 al giorno)
+        saved.setdefault("categorie", {}).setdefault("elettrodomestici", {}).update({"max_giorno": 1, "sconto_min": 60})
+        saved["_v"] = 3
 
 
 def _post(s: dict, cfg: dict, d: engine.Deal) -> bool:
