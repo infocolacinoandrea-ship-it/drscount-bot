@@ -1,0 +1,19 @@
+name: Prova Creators API
+on:
+  workflow_dispatch:
+jobs:
+  prova:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Chiamata di prova
+        env:
+          CREATORS_CLIENT_ID: ${{ secrets.CREATORS_CLIENT_ID }}
+          CREATORS_CLIENT_SECRET: ${{ secrets.CREATORS_CLIENT_SECRET }}
+          CREATORS_VERSION: ${{ secrets.CREATORS_VERSION }}
+        run: python src/creators_probe.py
