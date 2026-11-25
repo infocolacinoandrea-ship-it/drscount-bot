@@ -21,14 +21,21 @@ def enabled() -> bool:
     return bool(os.getenv("CREATORS_CLIENT_ID") and os.getenv("CREATORS_CLIENT_SECRET"))
 
 
+SHARE = ("https://t.me/share/url?url=https://t.me/DRSCOUNT&text=Ciao%20ho%20trovato%20questo%20canale%20che%20posta%20"
+         "ogni%20giorno%20le%20migliori%20offerte%20del%20web%0AEntra%20e%20clicca%20su%20unisciti%20anche%20tu%20%E2%98%BA%EF%B8%8F")
+
+
 def caption(d: engine.Deal) -> str:
-    t = html.escape(d.title)
-    old = "invece di" if d.basis != "WAS_PRICE" else "prima"
-    return (f"🔥 <b>{t}</b>\n\n"
-            f"💰 <b>{d.price_txt}</b> ({old} <s>{d.old_price_txt}</s>) · <b>-{d.discount}%</b>\n"
-            f"🏷 {html.escape(CATEGORIES[d.category]['label'])}\n\n"
-            f"🔗 <a href=\"{d.link}\">amazon.it/dp/{d.asin}</a>\n"
-            f"<i>Prezzo rilevato alle {dt.datetime.now(dt.timezone(dt.timedelta(hours=1))):%H:%M}, può variare.</i>")
+    """Stesso stile del canale @DRSCOUNT: titolo, prezzo con ✅/❌, link, recensioni, condividi."""
+    parts = [html.escape(d.full_title or d.title)]
+    if d.historic_low:
+        parts.append("📉 <b>MINIMO STORICO!</b>")
+    parts.append(f"💰 Al prezzo di ✅<b>{d.price_txt}</b> invece di ❌<s>{d.old_price_txt}</s> (<b>{d.discount}%</b>)")
+    parts.append(f'🛒 Clicca qui per acquistare <a href="{d.link}">{d.link}</a>')
+    if d.reviews:
+        parts.append(f"⭐️ {d.reviews:,} Recensioni: {d.rating:.1f} / 5.0".replace(",", "."))
+    parts.append(f'Condividi <a href="{html.escape(SHARE)}">@DRSCOUNT</a>')
+    return "\n\n".join(parts)
 
 
 def _save_cfg(s: dict, cfg: dict):
@@ -42,14 +49,17 @@ def handle_menu(s: dict) -> bool:
         kind, obj = bot.menu_events.pop(0)
         cfg = settings.load(s)
         if kind == "menu":
-            bot.send_menu(*menu.main_menu(cfg))
+            bot.send_menu(*menu.render("main", cfg))
             continue
         page = menu.apply(kind[4:], cfg)
+        if kind == "cfg:noop":
+            bot.ack(obj, "")
+            continue
         if cfg.pop("_now", False):
             s["deals_force"] = True
         _save_cfg(s, cfg)
-        bot.ack(obj, "Fatto" if kind != "cfg:noop" else "")
-        bot.edit_menu(obj["message"]["message_id"], *(menu.cat_menu(cfg) if page == "cat" else menu.main_menu(cfg)))
+        bot.ack(obj, "🔎 Cerco…" if s.get("deals_force") else "✅ Salvato")
+        bot.edit_menu(obj["message"]["message_id"], *menu.render(page, cfg))
         changed = True
     return changed
 

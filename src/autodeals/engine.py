@@ -22,6 +22,10 @@ class Deal:
     photo_url: str
     category: str
     link: str
+    full_title: str = ""
+    reviews: int = 0
+    rating: float = 0.0
+    historic_low: bool = False
 
     @property
     def price_txt(self) -> str:
@@ -56,13 +60,17 @@ def parse_item(item: dict, category: str) -> Deal | None:
         old = float(basis["money"]["amount"])
         pct = int((pr.get("savings") or {}).get("percentage") or round((1 - price / old) * 100))
         photo = item["images"]["primary"]["large"]["url"]
-        title = clean_title(item["itemInfo"]["title"]["displayValue"])
+        raw_title = item["itemInfo"]["title"]["displayValue"]
+        title = clean_title(raw_title)
         asin = item["asin"]
     except (KeyError, TypeError, ValueError, ZeroDivisionError):
         return None
     if old <= price or not title or not photo:
         return None
-    deal = Deal(asin=asin, title=title, price=price, old_price=old, discount=pct,
+    cr = item.get("customerReviews") or {}
+    deal = Deal(full_title=clean_title(raw_title, max_len=110), reviews=int(((cr.get("count") or {}).get("value") if isinstance(cr.get("count"), dict) else cr.get("count")) or 0),
+                rating=float(((cr.get("starRating") or {}).get("value") if isinstance(cr.get("starRating"), dict) else cr.get("starRating")) or 0),
+                asin=asin, title=title, price=price, old_price=old, discount=pct,
                 basis=basis.get("savingBasisType", ""), seller=(main[0].get("merchantInfo") or {}).get("name", ""),
                 photo_url=photo, category=category, link=clean_link(asin))
     return deal if fits_category(deal) else None

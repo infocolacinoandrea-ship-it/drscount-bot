@@ -1,58 +1,105 @@
-"""Menu /impostazioni su Telegram: pulsanti per cambiare filtri e quote dell'autodeals."""
+"""Menu /impostazioni su Telegram: pagine con pulsanti grandi (uno per riga) e spiegazioni in italiano semplice.
+Ogni pulsante modifica lo stesso messaggio, così il valore nuovo si vede subito."""
 from __future__ import annotations
 
 from .categories import CATEGORIES
 
+# nome breve -> (impostazione, passo, minimo, massimo)
 STEPS = {"smin": ("sconto_min", 5, 5, 85), "smax": ("sconto_max", 5, 20, 95), "pmin": ("prezzo_min", 5, 0, 500),
          "pmax": ("prezzo_max", 50, 20, 5000), "tot": ("max_al_giorno", 2, 1, 100),
          "rip": ("ripubblica_dopo_giorni", 1, 1, 60), "giro": ("max_per_giro", 1, 1, 10),
          "ogni": ("ogni_minuti", 10, 10, 240)}
 
 
-def _btn(text, data):
-    return {"text": text, "callback_data": f"cfg:{data}"}
+def _b(text, data, style=None):
+    b = {"text": text, "callback_data": f"cfg:{data}"}
+    if style:
+        b["style"] = style      # "success" verde, "danger" rosso, "primary" blu (app Telegram aggiornate)
+    return b
 
 
-def main_menu(cfg: dict) -> tuple[str, dict]:
-    on = lambda b: "✅" if b else "❌"
-    text = ("⚙️ Impostazioni autodeals\n\n"
-            f"Sconto: {cfg['sconto_min']}% – {cfg['sconto_max']}%\n"
-            f"Prezzo: {cfg['prezzo_min']}€ – {cfg['prezzo_max']}€\n"
-            f"Massimo al giorno: {cfg['max_al_giorno']} (per giro: {cfg['max_per_giro']})\n"
-            f"Controllo ogni {cfg['ogni_minuti']} min · stesso prodotto dopo {cfg['ripubblica_dopo_giorni']} giorni\n"
-            f"Solo venduto da Amazon: {on(cfg['solo_amazon'])}\n"
-            f"Sconto calcolato su: {'prezzo precedente (solo veri)' if cfg['base_sconto'] == 'was' else 'qualsiasi riferimento'}\n"
-            f"Canale: {cfg['canale']}")
-    kb = [[_btn("−", "smin-"), _btn(f"Sconto min {cfg['sconto_min']}%", "noop"), _btn("+", "smin+")],
-          [_btn("−", "smax-"), _btn(f"Sconto max {cfg['sconto_max']}%", "noop"), _btn("+", "smax+")],
-          [_btn("−", "pmin-"), _btn(f"Prezzo min {cfg['prezzo_min']}€", "noop"), _btn("+", "pmin+")],
-          [_btn("−", "pmax-"), _btn(f"Prezzo max {cfg['prezzo_max']}€", "noop"), _btn("+", "pmax+")],
-          [_btn("−", "tot-"), _btn(f"Max al giorno {cfg['max_al_giorno']}", "noop"), _btn("+", "tot+")],
-          [_btn("−", "giro-"), _btn(f"Per giro {cfg['max_per_giro']}", "noop"), _btn("+", "giro+")],
-          [_btn("−", "ogni-"), _btn(f"Ogni {cfg['ogni_minuti']} min", "noop"), _btn("+", "ogni+")],
-          [_btn("−", "rip-"), _btn(f"Ripubblica dopo {cfg['ripubblica_dopo_giorni']} gg", "noop"), _btn("+", "rip+")],
-          [_btn(f"{on(cfg['solo_amazon'])} Solo Amazon", "amz"),
-           _btn("Sconto: solo prezzo precedente" if cfg["base_sconto"] == "was" else "Sconto: qualsiasi", "base")],
-          [_btn("📦 Categorie e quote", "page:cat")],
-          [_btn(f"{on(cfg['attivo'])} Autodeals {'acceso' if cfg['attivo'] else 'spento'}", "on"),
-           _btn("🔎 Cerca ora", "now")]]
-    return text, {"inline_keyboard": kb}
+def _pair(label_minus, key_minus, label_plus, key_plus):
+    return [_b(label_minus, key_minus, "danger"), _b(label_plus, key_plus, "success")]
 
 
-def cat_menu(cfg: dict) -> tuple[str, dict]:
-    lines, kb = ["📦 Categorie e quote giornaliere\n"], []
-    for cid, c in CATEGORIES.items():
-        v = cfg["categorie"][cid]
-        lines.append(f"{'✅' if v['attiva'] else '❌'} {c['label']}: {v['max_giorno']} al giorno")
-        kb.append([_btn(("✅ " if v["attiva"] else "❌ ") + c["label"][:18], f"c:{cid}:t"),
-                   _btn("−", f"c:{cid}:-"), _btn(str(v["max_giorno"]), "noop"), _btn("+", f"c:{cid}:+")])
-    kb.append([_btn("⬅️ Indietro", "page:main")])
-    return "\n".join(lines), {"inline_keyboard": kb}
+def _back(page="main"):
+    return [_b("⬅️ Indietro", f"page:{page}")]
+
+
+def render(page: str, cfg: dict) -> tuple[str, dict]:
+    if page == "sconto":
+        return (f"🎯 SCONTO\n\nPubblico solo offerte con sconto da {cfg['sconto_min']}% a {cfg['sconto_max']}%.\n\n"
+                "• Il minimo toglie le offerte poco convenienti.\n"
+                "• Il massimo toglie gli sconti troppo alti per essere veri (spesso sono errori di prezzo).",
+                {"inline_keyboard": [
+                    _pair("➖ Minimo −5%", "smin-", "➕ Minimo +5%", "smin+"),
+                    _pair("➖ Massimo −5%", "smax-", "➕ Massimo +5%", "smax+"), _back()]})
+    if page == "prezzo":
+        return (f"💶 PREZZO\n\nPubblico solo prodotti che costano da {cfg['prezzo_min']}€ a {cfg['prezzo_max']}€ "
+                "(il prezzo scontato, quello che paga chi compra).",
+                {"inline_keyboard": [
+                    _pair("➖ Minimo −5€", "pmin-", "➕ Minimo +5€", "pmin+"),
+                    _pair("➖ Massimo −50€", "pmax-", "➕ Massimo +50€", "pmax+"), _back()]})
+    if page == "ritmo":
+        return (f"⏱ QUANTE E QUANDO\n\n• Al giorno al massimo: {cfg['max_al_giorno']} offerte (in tutto)\n"
+                f"• A ogni controllo ne pubblico fino a: {cfg['max_per_giro']}\n"
+                f"• Cerco nuove offerte ogni: {cfg['ogni_minuti']} minuti\n"
+                f"• Lo stesso prodotto lo ripubblico dopo: {cfg['ripubblica_dopo_giorni']} giorni",
+                {"inline_keyboard": [
+                    _pair("➖ Al giorno −2", "tot-", "➕ Al giorno +2", "tot+"),
+                    _pair("➖ Per controllo −1", "giro-", "➕ Per controllo +1", "giro+"),
+                    _pair("➖ Ogni −10 min", "ogni-", "➕ Ogni +10 min", "ogni+"),
+                    _pair("➖ Ripubblica −1 giorno", "rip-", "➕ Ripubblica +1 giorno", "rip+"), _back()]})
+    if page == "filtri":
+        was = cfg["base_sconto"] == "was"
+        return ("🛡 FILTRI\n\n"
+                f"• Venduto da Amazon: {'SÌ, solo prodotti venduti e spediti da Amazon' if cfg['solo_amazon'] else 'NO, anche altri venditori'}\n"
+                f"• Calcolo dello sconto: {'solo sul prezzo precedente reale (pochi ma affidabili)' if was else 'su qualsiasi prezzo di riferimento di Amazon (molte offerte, ma lo sconto può essere gonfiato)'}",
+                {"inline_keyboard": [
+                    [_b("✅ Solo Amazon: SÌ — tocca per cambiare" if cfg["solo_amazon"] else "❌ Solo Amazon: NO — tocca per cambiare",
+                        "amz", "success" if cfg["solo_amazon"] else "danger")],
+                    [_b("Sconto: solo prezzo reale — cambia" if was else "Sconto: qualsiasi riferimento — cambia", "base")],
+                    _back()]})
+    if page == "cat":
+        rows = []
+        for cid, c in CATEGORIES.items():
+            v = cfg["categorie"][cid]
+            rows.append([_b(f"{'✅' if v['attiva'] else '❌'} {c['label']} · {v['max_giorno']} al giorno" if v["attiva"]
+                            else f"❌ {c['label']} · spenta", f"page:c:{cid}")])
+        rows.append(_back())
+        tot = sum(v["max_giorno"] for v in cfg["categorie"].values() if v["attiva"])
+        return ("📦 CATEGORIE\n\nTocca una categoria per accenderla, spegnerla o cambiare quante offerte al giorno "
+                f"pubblicare.\n\nSomma delle quote attive: {tot} (il tetto totale è {cfg['max_al_giorno']} al giorno).",
+                {"inline_keyboard": rows})
+    if page.startswith("c:"):
+        cid = page[2:]
+        c, v = CATEGORIES[cid], cfg["categorie"][cid]
+        return (f"📦 {c['label'].upper()}\n\nStato: {'ACCESA' if v['attiva'] else 'SPENTA'}\n"
+                f"Offerte al giorno: {v['max_giorno']}",
+                {"inline_keyboard": [
+                    [_b("✅ Accesa — tocca per spegnere" if v["attiva"] else "❌ Spenta — tocca per accendere",
+                        f"c:{cid}:t", "success" if v["attiva"] else "danger")],
+                    _pair("➖ Una in meno al giorno", f"c:{cid}:-", "➕ Una in più al giorno", f"c:{cid}:+"),
+                    _back("cat")]})
+    # pagina principale
+    cats = [c["label"] for cid, c in CATEGORIES.items() if cfg["categorie"][cid]["attiva"]]
+    text = ("⚙️ IMPOSTAZIONI AUTODEALS\n\n"
+            f"Stato: {'🟢 ACCESO' if cfg['attivo'] else '🔴 SPENTO'}\n"
+            f"🎯 Sconto: {cfg['sconto_min']}% – {cfg['sconto_max']}%\n"
+            f"💶 Prezzo: {cfg['prezzo_min']}€ – {cfg['prezzo_max']}€\n"
+            f"📦 Categorie accese: {len(cats)} su {len(CATEGORIES)}\n"
+            f"⏱ Fino a {cfg['max_al_giorno']} offerte al giorno, controllo ogni {cfg['ogni_minuti']} min\n"
+            f"📢 Pubblico su: {cfg['canale']}\n\nTocca una voce per cambiarla.")
+    return text, {"inline_keyboard": [
+        [_b("🎯 Sconto", "page:sconto")], [_b("💶 Prezzo", "page:prezzo")], [_b("📦 Categorie e quote", "page:cat")],
+        [_b("⏱ Quante e quando", "page:ritmo")], [_b("🛡 Filtri", "page:filtri")],
+        [_b("🟢 Acceso — tocca per spegnere" if cfg["attivo"] else "🔴 Spento — tocca per accendere", "on",
+            "success" if cfg["attivo"] else "danger")],
+        [_b("🔎 Cerca offerte adesso", "now", "primary")]]}
 
 
 def apply(data: str, settings: dict) -> str:
-    """Applica un pulsante a `settings` (il dizionario completo salvato nello stato). Ritorna la pagina da mostrare
-    ("main", "cat") o "now" se va lanciata una ricerca subito."""
+    """Applica un pulsante a `settings`. Ritorna la pagina da mostrare."""
     if data.startswith("page:"):
         return data[5:]
     if data == "now":
@@ -61,10 +108,11 @@ def apply(data: str, settings: dict) -> str:
     if data in ("amz", "base", "on"):
         if data == "amz":
             settings["solo_amazon"] = not settings["solo_amazon"]
-        elif data == "base":
+            return "filtri"
+        if data == "base":
             settings["base_sconto"] = "any" if settings["base_sconto"] == "was" else "was"
-        else:
-            settings["attivo"] = not settings["attivo"]
+            return "filtri"
+        settings["attivo"] = not settings["attivo"]
         return "main"
     if data.startswith("c:"):
         _, cid, act = data.split(":")
@@ -74,7 +122,7 @@ def apply(data: str, settings: dict) -> str:
                 v["attiva"] = not v["attiva"]
             else:
                 v["max_giorno"] = max(0, min(50, v["max_giorno"] + (1 if act == "+" else -1)))
-        return "cat"
+        return f"c:{cid}"
     key, sign = data[:-1], data[-1]
     if key in STEPS and sign in "+-":
         name, step, lo, hi = STEPS[key]
@@ -83,4 +131,5 @@ def apply(data: str, settings: dict) -> str:
             settings["sconto_max"] = settings["sconto_min"]
         if settings["prezzo_min"] > settings["prezzo_max"]:
             settings["prezzo_max"] = settings["prezzo_min"]
+        return {"smin": "sconto", "smax": "sconto", "pmin": "prezzo", "pmax": "prezzo"}.get(key, "ritmo")
     return "main"

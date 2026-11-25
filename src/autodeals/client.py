@@ -9,6 +9,7 @@ API = "https://creatorsapi.amazon/catalog/v1"
 PARTNER_TAG = os.getenv("PARTNER_TAG", "drscount06-21")
 RESOURCES = ["images.primary.large", "itemInfo.title", "offersV2.listings.price",
              "offersV2.listings.merchantInfo", "offersV2.listings.availability"]
+REVIEW_RESOURCES = ["customerReviews.count", "customerReviews.starRating"]
 
 
 class CreatorsClient:
@@ -19,6 +20,7 @@ class CreatorsClient:
         self._token = ""
         self._exp = 0.0
         self._last = 0.0
+        self.reviews = True       # prova a chiedere anche le recensioni; se l'API le rifiuta smette
 
     def token(self) -> str:
         if self._token and time.time() < self._exp - 60:
@@ -37,7 +39,7 @@ class CreatorsClient:
         if wait > 0:
             time.sleep(wait)
         body = {"keywords": keywords, "partnerTag": PARTNER_TAG, "itemCount": 10, "itemPage": page,
-                "resources": RESOURCES}
+                "resources": RESOURCES + (REVIEW_RESOURCES if self.reviews else [])}
         if index and index != "All":
             body["searchIndex"] = index
         if min_saving:
@@ -49,6 +51,11 @@ class CreatorsClient:
             self._last = time.time()
             if r.status_code == 429 or r.status_code >= 500:
                 time.sleep(5 * (attempt + 1))
+                continue
+            if r.status_code == 400 and self.reviews:
+                self.reviews = False
+                print(f"[autodeals] recensioni non accettate: {r.text[:200]}")
+                body["resources"] = RESOURCES
                 continue
             if not r.ok:
                 raise RuntimeError(f"SearchItems {r.status_code}: {r.text[:300]}")

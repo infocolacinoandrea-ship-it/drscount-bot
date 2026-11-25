@@ -112,7 +112,7 @@ def edit_menu(message_id: int, text: str, keyboard: dict):
 
 def send_deal(chat_id, image: Path, caption_html: str, url: str):
     """Pubblica l'offerta su un canale: foto + testo + pulsante che apre Amazon (l'app, se installata)."""
-    kb = {"inline_keyboard": [[{"text": "🛒 Vai all'offerta", "url": url}]]}
+    kb = {"inline_keyboard": [[{"text": "🛒 CLICCA QUI PER AGGIUNGERE AL CARRELLO", "url": url, "style": "success"}]]}
     with open(image, "rb") as f:
         return _api("sendPhoto", data={"chat_id": chat_id, "caption": caption_html[:1024], "parse_mode": "HTML",
                                        "reply_markup": json.dumps(kb)}, files={"photo": f})
