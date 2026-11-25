@@ -43,7 +43,7 @@ cfg = settings.load({"settings": {"categorie": {"elettrodomestici": {"max_giorno
 cands = [mk("e1", 60, "elettrodomestici"), mk("e2", 55, "elettrodomestici"), mk("c1", 50, "casa"),
          mk("c2", 45, "casa"), mk("c3", 41, "casa")]
 got = engine.pick(cands, cfg, {}, limit=10)
-assert [x.asin for x in got] == ["e1", "c1", "c2"], [x.asin for x in got]   # 1 elettrodomestico, tetto 3
+assert [x.asin for x in got] == ["c1", "c2", "c3"], [x.asin for x in got]   # casa pesa di più; tetto 3
 
 # già pubblicati oggi + doppioni recenti
 day = dt.datetime.now(dt.timezone(dt.timedelta(hours=1))).strftime("%Y-%m-%d")
@@ -76,4 +76,14 @@ cfg2 = settings.load({})
 assert [x.asin for x in engine.pick([v1, v2, mk("v3", 50, "casa", title="Altro")], cfg2, {}, limit=5)] == ["v1", "v3"]
 st2 = {"deals_titles": {engine.title_key(v1): dt.datetime.now(dt.timezone.utc).isoformat()}}
 assert engine.pick([v2], cfg2, st2, limit=5) == []
+# rotazione fra categorie in proporzione alle quote (casa 4, cura 2, elettronica 1)
+cfg3 = settings.load({"settings": {"max_al_giorno": 50, "categorie": {c: {"attiva": False} for c in
+                                    settings.DEFAULTS["categorie"]}}})
+for c, n in (("casa", 4), ("cura_persona", 2), ("elettronica", 1)):
+    cfg3["categorie"][c] = {"attiva": True, "max_giorno": n}
+pool = [mk(f"{c}{i}", 70 - i, c) for c, n in (("casa", 6), ("cura_persona", 4), ("elettronica", 3)) for i in range(n)]
+seq = [x.category for x in engine.pick(pool, cfg3, {}, limit=20)]
+assert seq.count("casa") == 4 and seq.count("cura_persona") == 2 and seq.count("elettronica") == 1, seq
+assert seq[:3] != ["casa"] * 3 and seq[0] == "casa" and "cura_persona" in seq[:3], seq   # alternate, non a blocchi
+print("sequenza:", seq)
 print("tutto ok")

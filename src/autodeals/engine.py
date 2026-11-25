@@ -129,24 +129,40 @@ def title_recent(d: Deal, state: dict, days: int) -> bool:
 
 
 def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list[Deal]:
-    """Sceglie fra i candidati rispettando tutto: filtri, doppioni, quote per categoria e tetto giornaliero.
-    Ordine: sconto più alto per prima."""
+    """Sceglie a rotazione fra le categorie, in proporzione alle quote (smooth weighted round-robin):
+    con casa 6, cura persona 4, elettronica 3 esce per esempio casa, cura, casa, elettronica, casa, cura...
+    Dentro ogni categoria prima lo sconto più alto. Rispetta filtri, doppioni, quote e tetto giornaliero.
+    La rotazione continua da un controllo all'altro (state["deals_wrr"])."""
     counts = today_counts(state)
     total = sum(counts.values())
-    out: list[Deal] = []
+    queues: dict[str, list[Deal]] = {}
     for d in sorted(candidates, key=lambda x: -x.discount):
         cat = cfg["categorie"].get(d.category) or {}
         if not cat.get("attiva", False) or not passes(d, cfg) or not not_recent(d, state, cfg["ripubblica_dopo_giorni"]):
             continue
-        if counts.get(d.category, 0) + sum(1 for o in out if o.category == d.category) >= cat.get("max_giorno", 0):
+        if title_recent(d, state, cfg["ripubblica_dopo_giorni"]):
             continue
-        if total + len(out) >= cfg["max_al_giorno"] or any(o.asin == d.asin for o in out):
-            continue
-        # stesso prodotto in un'altra variante (colore/taglia) già scelto ora o pubblicato di recente
-        if any(title_key(o) == title_key(d) for o in out) or title_recent(d, state, cfg["ripubblica_dopo_giorni"]):
-            continue
-        out.append(d)
-        if len(out) >= limit:
+        queues.setdefault(d.category, []).append(d)
+    cur = state.setdefault("deals_wrr", {})
+    out: list[Deal] = []
+    while len(out) < limit and total + len(out) < cfg["max_al_giorno"]:
+        avail = {}
+        for c, q in queues.items():
+            quota = cfg["categorie"][c].get("max_giorno", 0)
+            if q and counts.get(c, 0) + sum(1 for o in out if o.category == c) < quota:
+                avail[c] = quota
+        if not avail:
+            break
+        for c, w in avail.items():
+            cur[c] = cur.get(c, 0) + w
+        best = max(avail, key=lambda c: cur[c])
+        cur[best] -= sum(avail.values())
+        q = queues[best]
+        while q:
+            d = q.pop(0)
+            if any(o.asin == d.asin or title_key(o) == title_key(d) for o in out):
+                continue
+            out.append(d)
             break
     return out
 
