@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from scraper import clean_title
 
+import re
+
 from .categories import CATEGORIES
 from .client import PARTNER_TAG, CreatorsClient
 
@@ -60,9 +62,26 @@ def parse_item(item: dict, category: str) -> Deal | None:
         return None
     if old <= price or not title or not photo:
         return None
-    return Deal(asin=asin, title=title, price=price, old_price=old, discount=pct,
+    deal = Deal(asin=asin, title=title, price=price, old_price=old, discount=pct,
                 basis=basis.get("savingBasisType", ""), seller=(main[0].get("merchantInfo") or {}).get("name", ""),
                 photo_url=photo, category=category, link=clean_link(asin))
+    return deal if fits_category(deal) else None
+
+
+def _has(title: str, words: list[str]) -> bool:
+    t = title.lower()
+    return any(re.search(r"(?<![\wàèéìòù])" + re.escape(w) + r"(?![\wàèéìòù])", t) for w in words)
+
+
+def fits_category(d: Deal) -> bool:
+    """Controllo del titolo: il prodotto deve essere davvero di quella categoria (non un accessorio,
+    non un prodotto capitato lì per via dell'indice di Amazon)."""
+    rules = CATEGORIES.get(d.category) or {}
+    if rules.get("must") and not _has(d.title, rules["must"]):
+        return False
+    if rules.get("not") and _has(d.title, rules["not"]):
+        return False
+    return d.price >= rules.get("prezzo_min", 0)
 
 
 def passes(d: Deal, cfg: dict) -> bool:
@@ -122,9 +141,9 @@ def scan(client: CreatorsClient, cfg: dict, state: dict, per_category: int = 2) 
         kws = cat["keywords"]
         start = rot.get(cid, 0)
         for i in range(per_category):
-            kw = kws[(start + i) % len(kws)]
+            kw, _, idx = kws[(start + i) % len(kws)].partition("|")   # "parola|Indice" per cambiare indice
             try:
-                items = client.search(kw, cat["index"], min_saving=cfg["sconto_min"])
+                items = client.search(kw, idx or cat["index"], min_saving=cfg["sconto_min"])
             except RuntimeError as e:
                 print(f"[autodeals] {cid}/{kw}: {e}")
                 continue

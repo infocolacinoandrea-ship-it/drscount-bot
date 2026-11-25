@@ -53,4 +53,21 @@ assert [x.asin for x in got] == ["c2", "c3"], [x.asin for x in got]       # e* e
 # categoria spenta
 cfg["categorie"]["casa"]["attiva"] = False
 assert engine.pick(cands, cfg, {}, limit=10)[0].category == "elettrodomestici"
+# controllo categoria sul titolo
+def it(title, price=300.0):
+    x = dict(ITEM); x["itemInfo"] = {"title": {"displayValue": title}}
+    x["offersV2"] = {"listings": [{"isBuyBoxWinner": True, "merchantInfo": {"name": "Amazon"},
+        "price": {"money": {"amount": price}, "savingBasis": {"money": {"amount": price * 2}, "savingBasisType": "LIST_PRICE"},
+                  "savings": {"percentage": 50}}}]}
+    return x
+E = "elettrodomestici"
+assert engine.parse_item(it("Bosch Lavatrice 9 kg 1400 giri"), E)
+assert engine.parse_item(it("Samsung Smart TV 55 pollici 4K"), E)
+assert engine.parse_item(it("Candy Frigorifero Combinato 300 L"), E)
+assert not engine.parse_item(it("Supporto TV da parete per 32-65 pollici"), E)       # accessorio
+assert not engine.parse_item(it("Tubo di scarico per lavatrice 3 m"), E)               # ricambio
+assert not engine.parse_item(it("Mobile TV moderno con cassetti"), E)
+assert not engine.parse_item(it("Lavatrice giocattolo", 20.0), E)                      # sotto il prezzo minimo
+assert not engine.parse_item(it("Zaino per il laptop impermeabile"), "casa")           # non è casa
+assert engine.parse_item(it("Set di pentole antiaderenti 8 pezzi", 40.0), "casa")
 print("tutto ok")
