@@ -87,6 +87,7 @@ def step(s: dict, client: CreatorsClient | None = None) -> bool:
             print(f"[autodeals] {d.asin}: {e}")
             continue
         day = dt.datetime.now(dt.timezone(dt.timedelta(hours=1))).strftime("%Y-%m-%d")
+        s.setdefault("deals_titles", {})[engine.title_key(d)] = dt.datetime.now(dt.timezone.utc).isoformat()
         s.setdefault("deals_seen", {})[d.asin] = dt.datetime.now(dt.timezone.utc).isoformat()
         daily = s.setdefault("deals_daily", {})
         daily.setdefault(day, {})

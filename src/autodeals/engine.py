@@ -118,6 +118,16 @@ def not_recent(d: Deal, state: dict, days: int) -> bool:
     return dt.datetime.fromisoformat(seen) < dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
 
 
+def title_key(d: Deal) -> str:
+    """Chiave per riconoscere lo stesso prodotto in varianti diverse (colore, taglia: ASIN diversi, stesso titolo)."""
+    return re.sub(r"[^a-z0-9]+", " ", d.title.lower()).strip()
+
+
+def title_recent(d: Deal, state: dict, days: int) -> bool:
+    seen = (state.get("deals_titles") or {}).get(title_key(d))
+    return bool(seen) and dt.datetime.fromisoformat(seen) >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+
+
 def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list[Deal]:
     """Sceglie fra i candidati rispettando tutto: filtri, doppioni, quote per categoria e tetto giornaliero.
     Ordine: sconto più alto per prima."""
@@ -131,6 +141,9 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list
         if counts.get(d.category, 0) + sum(1 for o in out if o.category == d.category) >= cat.get("max_giorno", 0):
             continue
         if total + len(out) >= cfg["max_al_giorno"] or any(o.asin == d.asin for o in out):
+            continue
+        # stesso prodotto in un'altra variante (colore/taglia) già scelto ora o pubblicato di recente
+        if any(title_key(o) == title_key(d) for o in out) or title_recent(d, state, cfg["ripubblica_dopo_giorni"]):
             continue
         out.append(d)
         if len(out) >= limit:

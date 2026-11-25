@@ -18,8 +18,8 @@ ITEM = {"asin": "B0TEST0001", "images": {"primary": {"large": {"url": "https://x
                        "savings": {"percentage": 70}}}]}}
 
 
-def mk(asin, pct, cat, seller="Amazon", basis="WAS_PRICE", price=20.0):
-    return engine.Deal(asin, "t", price, price * 100 / (100 - pct), pct, basis, seller, "u", cat, "l")
+def mk(asin, pct, cat, seller="Amazon", basis="WAS_PRICE", price=20.0, title=None):
+    return engine.Deal(asin, title or f"prodotto {asin}", price, price * 100 / (100 - pct), pct, basis, seller, "u", cat, "l")
 
 
 d = engine.parse_item(ITEM, "casa")
@@ -70,4 +70,10 @@ assert not engine.parse_item(it("Mobile TV moderno con cassetti"), E)
 assert not engine.parse_item(it("Lavatrice giocattolo", 20.0), E)                      # sotto il prezzo minimo
 assert not engine.parse_item(it("Zaino per il laptop impermeabile"), "casa")           # non è casa
 assert engine.parse_item(it("Set di pentole antiaderenti 8 pezzi", 40.0), "casa")
+# varianti dello stesso prodotto (ASIN diversi, stesso titolo): ne esce una sola
+v1, v2 = mk("v1", 60, "casa", title="Pannolini Pampers"), mk("v2", 55, "casa", title="Pannolini Pampers")
+cfg2 = settings.load({})
+assert [x.asin for x in engine.pick([v1, v2, mk("v3", 50, "casa", title="Altro")], cfg2, {}, limit=5)] == ["v1", "v3"]
+st2 = {"deals_titles": {engine.title_key(v1): dt.datetime.now(dt.timezone.utc).isoformat()}}
+assert engine.pick([v2], cfg2, st2, limit=5) == []
 print("tutto ok")
