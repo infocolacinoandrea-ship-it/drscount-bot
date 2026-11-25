@@ -102,6 +102,7 @@ def step(s: dict, client: CreatorsClient | None = None) -> bool:
         daily = s.setdefault("deals_daily", {})
         daily.setdefault(day, {})
         daily[day][d.category] = daily[day].get(d.category, 0) + 1
+        s["deals_last_brand"] = engine.brand(d)
         posted += 1
     for old in sorted(s.get("deals_daily", {}))[:-3]:   # tiene solo gli ultimi giorni
         s["deals_daily"].pop(old, None)

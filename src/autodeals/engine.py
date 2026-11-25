@@ -119,14 +119,41 @@ def not_recent(d: Deal, state: dict, days: int) -> bool:
     return dt.datetime.fromisoformat(seen) < dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
 
 
+_STOP = {"di", "da", "del", "della", "per", "con", "e", "il", "la", "lo", "i", "le", "in", "a", "un", "una", "x",
+         "pezzi", "pz", "confezione", "pack", "set", "kit", "ml", "g", "kg", "l", "cl", "xl", "xxl", "taglia", "nuovo"}
+
+
+def _tokens(title: str) -> list[str]:
+    return [w for w in re.findall(r"[a-z]+", title.lower()) if w not in _STOP and len(w) > 1]
+
+
 def title_key(d: Deal) -> str:
-    """Chiave per riconoscere lo stesso prodotto in varianti diverse (colore, taglia: ASIN diversi, stesso titolo)."""
-    return re.sub(r"[^a-z0-9]+", " ", d.title.lower()).strip()
+    """Titolo normalizzato (solo parole significative): serve a riconoscere lo stesso prodotto."""
+    return " ".join(_tokens(d.full_title or d.title))
+
+
+def same_product(a: str, b: str) -> bool:
+    """Due titoli (già normalizzati con title_key) sono lo stesso prodotto o la stessa linea?
+    Sì se iniziano con le stesse due parole (marca + linea), o se condividono la maggior parte delle parole."""
+    ta, tb = a.split(), b.split()
+    if not ta or not tb:
+        return False
+    if ta[:2] == tb[:2] and len(ta) > 1 and len(tb) > 1:
+        return True
+    sa, sb = set(ta), set(tb)
+    return len(sa & sb) / min(len(sa), len(sb)) >= 0.6 and len(sa & sb) >= 3
+
+
+def brand(d: Deal) -> str:
+    t = _tokens(d.full_title or d.title)
+    return t[0] if t else ""
 
 
 def title_recent(d: Deal, state: dict, days: int) -> bool:
-    seen = (state.get("deals_titles") or {}).get(title_key(d))
-    return bool(seen) and dt.datetime.fromisoformat(seen) >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+    k = title_key(d)
+    limit = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+    return any(dt.datetime.fromisoformat(ts) >= limit and same_product(k, old)
+               for old, ts in (state.get("deals_titles") or {}).items())
 
 
 _BULK = re.compile(r"(\d+)\s*(?:x\s*)?(pastiglie|tabs|rotoli|lavaggi|capsule|pezzi|pz|fogli|sacchetti)|pacco|scorta|maxi|"
@@ -173,8 +200,11 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list
         q = queues[best]
         while q:
             d = q.pop(0)
-            if any(o.asin == d.asin or title_key(o) == title_key(d) for o in out):
+            if any(o.asin == d.asin or same_product(title_key(o), title_key(d)) for o in out):
                 continue
+            prev = brand(out[-1]) if out else state.get("deals_last_brand")
+            if brand(d) and brand(d) == prev:
+                continue          # mai due offerte di fila della stessa marca
             out.append(d)
             break
     return out

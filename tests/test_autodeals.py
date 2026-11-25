@@ -19,7 +19,7 @@ ITEM = {"asin": "B0TEST0001", "images": {"primary": {"large": {"url": "https://x
 
 
 def mk(asin, pct, cat, seller="Amazon", basis="WAS_PRICE", price=20.0, title=None):
-    return engine.Deal(asin, title or f"prodotto {asin}", price, price * 100 / (100 - pct), pct, basis, seller, "u", cat, "l")
+    return engine.Deal(asin, title or "marca" + "".join("abcdefghij"[int(c)] if c.isdigit() else c for c in asin), price, price * 100 / (100 - pct), pct, basis, seller, "u", cat, "l")
 
 
 d = engine.parse_item(ITEM, "casa")
@@ -97,4 +97,16 @@ assert engine.priority(b) == 2 and engine.priority(a) == 0
 assert engine.parse_item(it("Nivea Deodorante Roll-on 48h Black & White", 3.0), "cura_persona")
 assert not engine.parse_item(it("Air Wick Deodorante per ambienti spray 3 pezzi", 6.0), "cura_persona")
 assert engine.parse_item(it("Air Wick Deodorante per ambienti spray 3 pezzi", 6.0), "casa")
+# quasi identici: stessa marca+linea, titoli un po' diversi
+k = lambda t: engine.title_key(mk("z", 50, "casa", title=t))
+assert engine.same_product(k("Finish Ultimate Infinity Shine Pastiglie Lavastoviglie 60"), k("Finish Ultimate Plus Infinity Shine 90 Tabs"))
+assert not engine.same_product(k("Borotalco Deodorante Spray Intensivo"), k("Borotalco Kit 3 Bagnodoccia Tripla Azione"))
+assert not engine.same_product(k("Scottonelle Carta Igienica 18 Rotoli"), k("Lenor Profumatore Bucato Lavatrice"))
+f1 = mk("f1", 60, "casa", title="Finish Ultimate Infinity Shine Pastiglie 60")
+f2 = mk("f2", 58, "casa", title="Finish Ultimate Plus Infinity Shine 90")
+o1 = mk("o1", 50, "casa", title="Lenor Ammorbidente 100 lavaggi")
+assert [x.asin for x in engine.pick([f1, f2, o1], cfgc, {}, limit=3)] == ["o1", "f1"]
+# non due offerte di fila della stessa marca, nemmeno fra un controllo e l'altro
+m1, m2 = mk("m1", 60, "casa", title="Dixan Detersivo Lavatrice 100"), mk("m2", 59, "casa", title="Dixan Ammorbidente 80")
+assert engine.pick([m1, m2], cfgc, {"deals_last_brand": "dixan"}, limit=2) == []
 print("tutto ok")
