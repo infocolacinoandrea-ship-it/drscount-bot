@@ -128,6 +128,18 @@ def title_recent(d: Deal, state: dict, days: int) -> bool:
     return bool(seen) and dt.datetime.fromisoformat(seen) >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
 
 
+_BULK = re.compile(r"(\d+)\s*(?:x\s*)?(pastiglie|tabs|rotoli|lavaggi|capsule|pezzi|pz|fogli|sacchetti)|pacco|scorta|maxi|"
+                  r"confezione da|\d+\s*x\s*\d+", re.I)
+
+
+def priority(d: Deal) -> int:
+    """2 = prima necessità in formato scorta, 1 = prima necessità, 0 = tutto il resto (solo categoria casa)."""
+    words = (CATEGORIES.get(d.category) or {}).get("essenziali_parole")
+    if not words or not _has(d.full_title or d.title, words):
+        return 0
+    return 2 if _BULK.search(d.full_title or d.title) else 1
+
+
 def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list[Deal]:
     """Sceglie a rotazione fra le categorie, in proporzione alle quote (smooth weighted round-robin):
     con casa 6, cura persona 4, elettronica 3 esce per esempio casa, cura, casa, elettronica, casa, cura...
@@ -136,7 +148,7 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list
     counts = today_counts(state)
     total = sum(counts.values())
     queues: dict[str, list[Deal]] = {}
-    for d in sorted(candidates, key=lambda x: -x.discount):
+    for d in sorted(candidates, key=lambda x: (-priority(x), -x.discount)):
         cat = cfg["categorie"].get(d.category) or {}
         if not cat.get("attiva", False) or not passes(d, cfg) or not not_recent(d, state, cfg["ripubblica_dopo_giorni"]):
             continue
@@ -177,8 +189,14 @@ def scan(client: CreatorsClient, cfg: dict, state: dict, per_category: int = 2) 
             continue
         kws = cat["keywords"]
         start = rot.get(cid, 0)
-        for i in range(per_category):
-            kw, _, idx = kws[(start + i) % len(kws)].partition("|")   # "parola|Indice" per cambiare indice
+        plan = [kws[(start + i) % len(kws)] for i in range(per_category)]
+        ess = cat.get("essenziali")
+        if ess:   # le cose di prima necessità si cercano a ogni giro (2 a rotazione) oltre alle altre parole
+            e0 = rot.get(cid + ":ess", 0)
+            plan += [ess[(e0 + i) % len(ess)] for i in range(2)]
+            rot[cid + ":ess"] = (e0 + 2) % len(ess)
+        for entry in plan:
+            kw, _, idx = entry.partition("|")   # "parola|Indice" per cambiare indice
             try:
                 items = client.search(kw, idx or cat["index"], min_saving=cfg["sconto_min"])
             except RuntimeError as e:

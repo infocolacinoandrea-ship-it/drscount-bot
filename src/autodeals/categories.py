@@ -31,9 +31,17 @@ CATEGORIES = {
         "label": "Casa e cucina", "index": "All",
         "keywords": ["detersivo", "pentole", "aspirapolvere", "lenzuola", "piumone", "organizer",
                      "bottiglia termica", "friggitrice ad aria", "frullatore", "ferro da stiro", "materasso"],
+        # prodotti di prima necessità, comprati da tutti e a scorta: cercati a ogni giro e messi davanti agli altri
+        "essenziali": ["pastiglie lavastoviglie", "ammorbidente", "carta igienica", "detersivo lavatrice",
+                       "detersivo piatti", "carta cucina", "detersivo capsule", "sgrassatore", "sacchetti spazzatura",
+                       "candeggina", "brillantante", "fazzoletti"],
+        "essenziali_parole": ["pastiglie", "tabs", "ammorbidente", "carta igienica", "detersivo", "detersivi",
+                              "carta cucina", "scottex", "rotoli", "capsule", "brillantante", "candeggina",
+                              "sgrassatore", "fazzoletti", "sacchetti"],
         # "Casa" cerca su tutto Amazon: servono parole del titolo che confermino il prodotto
         "must": ["detersivo", "pentola", "pentole", "padella", "aspirapolvere", "lenzuola", "lenzuolo", "piumone",
-                 "organizer", "termica", "friggitrice", "frullatore", "ferro da stiro", "materasso", "set", "caffè",
+                 "organizer", "termica", "friggitrice", "frullatore", "ferro da stiro", "materasso", "set", "caffè", "pastiglie", "tabs", "ammorbidente", "carta", "rotoli", "capsule", "brillantante",
+                 "candeggina", "sgrassatore", "fazzoletti", "sacchetti",
                  "bollitore", "tostapane", "scopa", "robot", "asciugamani", "coperta", "tappeto", "cuscino"],
         "not": ["tv", "smartphone", "cuffie"],
     },

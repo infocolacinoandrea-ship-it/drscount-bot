@@ -86,4 +86,11 @@ seq = [x.category for x in engine.pick(pool, cfg3, {}, limit=20)]
 assert seq.count("casa") == 4 and seq.count("cura_persona") == 2 and seq.count("elettronica") == 1, seq
 assert seq[:3] != ["casa"] * 3 and seq[0] == "casa" and "cura_persona" in seq[:3], seq   # alternate, non a blocchi
 print("sequenza:", seq)
+# casa: prima necessità e formato scorta davanti agli altri, anche con sconto più basso
+cfgc = settings.load({"settings": {"categorie": {"casa": {"max_giorno": 3}}}})
+a = mk("x1", 70, "casa", title="Set di pentole antiaderenti 8 pezzi")
+b = mk("x2", 45, "casa", title="Finish Quantum Pastiglie Lavastoviglie, 120 Lavaggi")
+c = mk("x3", 50, "casa", title="Carta igienica Foxy 18 rotoli")
+assert [x.asin for x in engine.pick([a, b, c], cfgc, {}, limit=3)] == ["x3", "x2", "x1"]
+assert engine.priority(b) == 2 and engine.priority(a) == 0
 print("tutto ok")
