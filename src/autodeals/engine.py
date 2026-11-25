@@ -85,9 +85,10 @@ def fits_category(d: Deal) -> bool:
     """Controllo del titolo: il prodotto deve essere davvero di quella categoria (non un accessorio,
     non un prodotto capitato lì per via dell'indice di Amazon)."""
     rules = CATEGORIES.get(d.category) or {}
-    if rules.get("must") and not _has(d.title, rules["must"]):
+    full = d.full_title or d.title      # il titolo lungo: quello corto può aver perso parole importanti
+    if rules.get("must") and not _has(full, rules["must"]):
         return False
-    if rules.get("not") and _has(d.title, rules["not"]):
+    if rules.get("not") and _has(full, rules["not"]):
         return False
     return d.price >= rules.get("prezzo_min", 0)
 

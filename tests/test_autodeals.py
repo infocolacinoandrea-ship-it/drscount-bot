@@ -93,4 +93,8 @@ b = mk("x2", 45, "casa", title="Finish Quantum Pastiglie Lavastoviglie, 120 Lava
 c = mk("x3", 50, "casa", title="Carta igienica Foxy 18 rotoli")
 assert [x.asin for x in engine.pick([a, b, c], cfgc, {}, limit=3)] == ["x3", "x2", "x1"]
 assert engine.priority(b) == 2 and engine.priority(a) == 0
+# deodoranti: persona -> cura_persona, ambienti -> casa
+assert engine.parse_item(it("Nivea Deodorante Roll-on 48h Black & White", 3.0), "cura_persona")
+assert not engine.parse_item(it("Air Wick Deodorante per ambienti spray 3 pezzi", 6.0), "cura_persona")
+assert engine.parse_item(it("Air Wick Deodorante per ambienti spray 3 pezzi", 6.0), "casa")
 print("tutto ok")

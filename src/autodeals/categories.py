@@ -34,14 +34,16 @@ CATEGORIES = {
         # prodotti di prima necessità, comprati da tutti e a scorta: cercati a ogni giro e messi davanti agli altri
         "essenziali": ["pastiglie lavastoviglie", "ammorbidente", "carta igienica", "detersivo lavatrice",
                        "detersivo piatti", "carta cucina", "detersivo capsule", "sgrassatore", "sacchetti spazzatura",
-                       "candeggina", "brillantante", "fazzoletti"],
+                       "candeggina", "brillantante", "fazzoletti", "deodorante per ambienti", "profumatore per ambienti"],
         "essenziali_parole": ["pastiglie", "tabs", "ammorbidente", "carta igienica", "detersivo", "detersivi",
                               "carta cucina", "scottex", "rotoli", "capsule", "brillantante", "candeggina",
-                              "sgrassatore", "fazzoletti", "sacchetti"],
+                              "sgrassatore", "fazzoletti", "sacchetti", "ambiente", "ambienti", "profumatore", "profumatori",
+                              "spray casa", "diffusore"],
         # "Casa" cerca su tutto Amazon: servono parole del titolo che confermino il prodotto
         "must": ["detersivo", "pentola", "pentole", "padella", "aspirapolvere", "lenzuola", "lenzuolo", "piumone",
                  "organizer", "termica", "friggitrice", "frullatore", "ferro da stiro", "materasso", "set", "caffè", "pastiglie", "tabs", "ammorbidente", "carta", "rotoli", "capsule", "brillantante",
-                 "candeggina", "sgrassatore", "fazzoletti", "sacchetti",
+                 "candeggina", "sgrassatore", "fazzoletti", "sacchetti", "ambiente", "ambienti", "profumatore",
+                 "profumatori", "spray casa", "diffusore",
                  "bollitore", "tostapane", "scopa", "robot", "asciugamani", "coperta", "tappeto", "cuscino"],
         "not": ["tv", "smartphone", "cuffie"],
     },
@@ -49,6 +51,9 @@ CATEGORIES = {
         "label": "Bellezza e cura persona", "index": "Beauty",
         "keywords": ["shampoo", "crema viso", "profumo", "rasoio", "spazzolino elettrico", "deodorante",
                      "siero viso", "bagnoschiuma", "asciugacapelli"],
+        # il deodorante per la casa/auto va nella categoria Casa, non qui
+        "not": ["ambiente", "ambienti", "profumatore", "profumatori", "spray casa", "diffusore", "auto", "stanza",
+                "armadio", "scarpe", "tessuti", "bucato"],
     },
     "elettronica": {
         "label": "Elettronica", "index": "Electronics",
