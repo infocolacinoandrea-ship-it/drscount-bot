@@ -3087,7 +3087,8 @@
   "categorie": {
    "elettrodomestici": {
     "attiva": true,
-    "max_giorno": 1
+    "max_giorno": 1,
+    "sconto_min": 60
    },
    "abbigliamento": {
     "attiva": true,
@@ -3114,7 +3115,7 @@
     "max_giorno": 2
    }
   },
-  "_v": 2
+  "_v": 3
  },
  "deals_wrr": {
   "cura_persona": -2,
