@@ -1,4 +1,4 @@
-"""Immagine dell'offerta in stile autodeals, con il logo Dr.Scount (1080x1350, adatta a Telegram)."""
+"""Immagine dell'offerta in stile Dr.Scount Bot Offerte, con il logo Dr.Scount (1080x1350, adatta a Telegram)."""
 from __future__ import annotations
 
 from pathlib import Path

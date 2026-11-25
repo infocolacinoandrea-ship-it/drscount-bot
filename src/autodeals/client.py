@@ -54,7 +54,7 @@ class CreatorsClient:
                 continue
             if r.status_code == 400 and self.reviews:
                 self.reviews = False
-                print(f"[autodeals] recensioni non accettate: {r.text[:200]}")
+                print(f"[bot-offerte] recensioni non accettate: {r.text[:200]}")
                 body["resources"] = RESOURCES
                 continue
             if not r.ok:

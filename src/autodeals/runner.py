@@ -1,4 +1,4 @@
-"""Collega l'autodeals al bot: menu Telegram, ricerca periodica, pubblicazione sul canale."""
+"""Collega il Dr.Scount Bot Offerte al bot: menu Telegram, ricerca periodica, pubblicazione sul canale."""
 from __future__ import annotations
 
 import datetime as dt
@@ -84,7 +84,7 @@ def step(s: dict, client: CreatorsClient | None = None) -> bool:
                                CATEGORIES[d.category]["label"], OUT / f"{d.asin}.jpg", d.basis == "WAS_PRICE")
             bot.send_deal(cfg["canale"], path, caption(d), d.link)
         except Exception as e:
-            print(f"[autodeals] {d.asin}: {e}")
+            print(f"[bot-offerte] {d.asin}: {e}")
             continue
         day = dt.datetime.now(dt.timezone(dt.timedelta(hours=1))).strftime("%Y-%m-%d")
         s.setdefault("deals_titles", {})[engine.title_key(d)] = dt.datetime.now(dt.timezone.utc).isoformat()

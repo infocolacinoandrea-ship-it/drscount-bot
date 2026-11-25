@@ -182,7 +182,7 @@ def scan(client: CreatorsClient, cfg: dict, state: dict, per_category: int = 2) 
             try:
                 items = client.search(kw, idx or cat["index"], min_saving=cfg["sconto_min"])
             except RuntimeError as e:
-                print(f"[autodeals] {cid}/{kw}: {e}")
+                print(f"[bot-offerte] {cid}/{kw}: {e}")
                 continue
             for it in items:
                 d = parse_item(it, cid)

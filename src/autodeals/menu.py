@@ -83,7 +83,7 @@ def render(page: str, cfg: dict) -> tuple[str, dict]:
                     _back("cat")]})
     # pagina principale
     cats = [c["label"] for cid, c in CATEGORIES.items() if cfg["categorie"][cid]["attiva"]]
-    text = ("⚙️ IMPOSTAZIONI AUTODEALS\n\n"
+    text = ("⚙️ IMPOSTAZIONI · DR.SCOUNT BOT OFFERTE\n\n"
             f"Stato: {'🟢 ACCESO' if cfg['attivo'] else '🔴 SPENTO'}\n"
             f"🎯 Sconto: {cfg['sconto_min']}% – {cfg['sconto_max']}%\n"
             f"💶 Prezzo: {cfg['prezzo_min']}€ – {cfg['prezzo_max']}€\n"

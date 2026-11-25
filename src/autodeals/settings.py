@@ -1,4 +1,4 @@
-"""Impostazioni dell'autodeals: stanno in state.json (chiave "settings") e si cambiano da Telegram."""
+"""Impostazioni del Dr.Scount Bot Offerte: stanno in state.json (chiave "settings") e si cambiano da Telegram."""
 import copy
 
 from .categories import CATEGORIES, DEFAULT_QUOTAS
