@@ -314,7 +314,7 @@
   "31220": "18180462904453084",
   "31222": "18022091975956640"
  },
- "tg_offset": 487048512,
+ "tg_offset": 487048513,
  "daily": {
   "2026-11-12": 15,
   "2026-11-13": 16,
@@ -868,7 +868,7 @@
   "categorie": {
    "elettrodomestici": {
     "attiva": true,
-    "max_giorno": 2
+    "max_giorno": 1
    },
    "abbigliamento": {
     "attiva": true,
