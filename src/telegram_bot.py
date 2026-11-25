@@ -43,13 +43,20 @@ def send_preview(image: Path, caption: str, post_id: int) -> int:
     return msg["message_id"]
 
 
+seen_chats: list[tuple[int, str]] = []   # canali in cui il bot ha visto un messaggio (id, titolo)
+
+
 def get_decisions(offset: int, wait: int = 0) -> tuple[list[tuple[str, int, dict]], int]:
     """Ritorna [(azione, post_id, callback)], nuovo offset. Con wait>0 resta in ascolto fino a wait secondi."""
     updates = _api("getUpdates", data={"offset": offset, "timeout": wait,
-                                       "allowed_updates": json.dumps(["callback_query", "message"])})
+                                       "allowed_updates": json.dumps(["callback_query", "message", "channel_post"])})
     out = []
     for u in updates:
         offset = max(offset, u["update_id"] + 1)
+        cp = u.get("channel_post")
+        if cp:
+            seen_chats.append((cp["chat"]["id"], cp["chat"].get("title", "")))
+            continue
         cq = u.get("callback_query")
         if not cq or str(cq["from"]["id"]) != str(config.ADMIN_CHAT_ID):
             continue

@@ -162,6 +162,11 @@ def publish_reel_now(s: dict, o: scraper.Offer, caption: str) -> str:
 
 def handle_decisions(s: dict, wait: int = 0) -> bool:
     decisions, s["tg_offset"] = bot.get_decisions(s["tg_offset"], wait)
+    while bot.seen_chats:   # canale nuovo in cui il bot è stato aggiunto: segna l'ID e avvisa
+        cid, title = bot.seen_chats.pop()
+        if str(cid) not in s.setdefault("chats", {}):
+            s["chats"][str(cid)] = title
+            bot.notify(f"📡 Canale rilevato: {title}\nID: {cid}")
     for action, pid, cq in decisions:
         p = s["pending"].pop(str(pid), None)
         if not p:
