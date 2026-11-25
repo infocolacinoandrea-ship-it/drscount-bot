@@ -39,7 +39,9 @@ def caption(d: engine.Deal) -> str:
 
 
 def _save_cfg(s: dict, cfg: dict):
-    s["settings"] = {k: v for k, v in cfg.items() if not k.startswith("_")}
+    v = (s.get("settings") or {}).get("_v", 0)
+    s["settings"] = {k: x for k, x in cfg.items() if not k.startswith("_")}
+    s["settings"]["_v"] = v
 
 
 def handle_menu(s: dict) -> bool:
@@ -64,8 +66,16 @@ def handle_menu(s: dict) -> bool:
     return changed
 
 
+def _migrate(s: dict):
+    """Cambi di impostazioni decisi a voce (si applicano una volta sola, poi restano modificabili dal menu)."""
+    saved = s.setdefault("settings", {})
+    if saved.get("_v", 0) < 2:       # 25/11: una offerta ogni ora
+        saved.update({"ogni_minuti": 60, "max_per_giro": 1, "_v": 2})
+
+
 def step(s: dict, client: CreatorsClient | None = None) -> bool:
     """Un giro di ricerca + pubblicazione. Ritorna True se ha pubblicato qualcosa."""
+    _migrate(s)
     cfg = settings.load(s)
     force = s.pop("deals_force", False)
     if not enabled() or not cfg["attivo"]:

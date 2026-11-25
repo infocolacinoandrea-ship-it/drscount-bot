@@ -29,6 +29,6 @@ def load(state: dict) -> dict:
             for c, cv in v.items():
                 if c in s["categorie"]:
                     s["categorie"][c].update(cv)
-        elif k in s:
+        elif k in s:   # (le chiavi che iniziano con _ , come _v, restano solo nello stato)
             s[k] = v
     return s
