@@ -29,6 +29,7 @@ import instagram
 import scoring
 import scraper
 import telegram_bot as bot
+from autodeals import runner as deals
 from render import render_post, render_story
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -331,8 +332,10 @@ def run():
     try:
         try:
             handle_decisions(s)
+            deals.handle_menu(s)
             expire_pending(s)
             send_new_previews(s)
+            deals.step(s)
             maybe_refresh_token(s)
         except Exception as e:  # un intoppo di rete non deve fermare il bot
             print(f"errore nel primo controllo: {e}", file=sys.stderr)
@@ -346,6 +349,8 @@ def run():
         while time.time() < end - 60 and active_now():
             try:
                 changed = handle_decisions(s, wait=50)
+                changed = deals.handle_menu(s) or changed
+                changed = deals.step(s) or changed
                 if time.time() >= next_check:
                     next_check = time.time() + config.CHECK_OFFERS_EVERY_MIN * 60
                     expire_pending(s)

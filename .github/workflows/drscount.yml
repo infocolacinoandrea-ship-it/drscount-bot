@@ -38,6 +38,9 @@ jobs:
           TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          CREATORS_CLIENT_ID: ${{ secrets.CREATORS_CLIENT_ID }}
+          CREATORS_CLIENT_SECRET: ${{ secrets.CREATORS_CLIENT_SECRET }}
+          CREATORS_VERSION: ${{ secrets.CREATORS_VERSION }}
           TG_CHANNEL: drscount
           LISTEN_MINUTES: "25"
           LOOKBACK_HOURS: "2"   # solo offerte pubblicate sul canale nelle ultime 2 ore

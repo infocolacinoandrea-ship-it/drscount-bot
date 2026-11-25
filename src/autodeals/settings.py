@@ -13,6 +13,9 @@ DEFAULTS = {
     "base_sconto": "any",        # "any" = qualsiasi riferimento; "was" = solo prezzo precedente (più affidabile)
     "ripubblica_dopo_giorni": 14,
     "max_al_giorno": 20,
+    "max_per_giro": 2,           # offerte pubblicate a ogni controllo
+    "ogni_minuti": 30,           # ogni quanto cerca
+    "canale": "-1005617414476",  # canale di TEST (Dr.scount test); si cambia quando sei pronto
     "categorie": {c: {"attiva": True, "max_giorno": DEFAULT_QUOTAS.get(c, 3)} for c in CATEGORIES},
 }
 
