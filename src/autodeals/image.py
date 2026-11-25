@@ -68,3 +68,18 @@ def render_deal(product_img: Image.Image, title: str, price: str, old_price: str
     out_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(out_path, "JPEG", quality=92)
     return out_path
+
+
+def dhash(img: Image.Image) -> int:
+    """Impronta della foto (64 bit): foto uguali o quasi uguali hanno impronte molto vicine."""
+    g = img.convert("L").resize((9, 8), Image.LANCZOS)
+    px = list(g.getdata())
+    bits = 0
+    for y in range(8):
+        for x in range(8):
+            bits = (bits << 1) | (px[y * 9 + x] > px[y * 9 + x + 1])
+    return bits
+
+
+def distance(a: int, b: int) -> int:
+    return bin(a ^ b).count("1")

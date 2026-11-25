@@ -12,7 +12,7 @@ import telegram_bot as bot
 from . import engine, menu, settings
 from .categories import CATEGORIES
 from .client import CreatorsClient
-from .image import download, render_deal
+from .image import dhash, distance, download, render_deal
 
 OUT = Path(__file__).resolve().parent.parent.parent / "deals_tmp"
 
@@ -73,6 +73,34 @@ def _migrate(s: dict):
         saved.update({"ogni_minuti": 60, "max_per_giro": 1, "_v": 2})
 
 
+def _post(s: dict, cfg: dict, d: engine.Deal) -> bool:
+    """Controlla che la foto non sia già uscita (anche con titolo diverso) e pubblica. False se scartata."""
+    try:
+        photo = download(d.photo_url)
+        h = dhash(photo)
+        limit = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=cfg["ripubblica_dopo_giorni"])
+        hashes = [x for x in s.get("deals_hashes", []) if dt.datetime.fromisoformat(x[1]) >= limit]
+        if any(distance(h, int(x[0], 16)) <= 8 for x in hashes):
+            print(f"[bot-offerte] {d.asin}: foto già pubblicata, scartata")
+            return False
+        path = render_deal(photo, d.title, d.price_txt, d.old_price_txt, d.discount,
+                           CATEGORIES[d.category]["label"], OUT / f"{d.asin}.jpg", d.basis == "WAS_PRICE")
+        bot.send_deal(cfg["canale"], path, caption(d), d.link)
+    except Exception as e:
+        print(f"[bot-offerte] {d.asin}: {e}")
+        return False
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    day = dt.datetime.now(dt.timezone(dt.timedelta(hours=1))).strftime("%Y-%m-%d")
+    s["deals_hashes"] = (hashes + [[f"{h:016x}", now]])[-200:]
+    s.setdefault("deals_titles", {})[engine.title_key(d)] = now
+    s.setdefault("deals_seen", {})[d.asin] = now
+    daily = s.setdefault("deals_daily", {})
+    daily.setdefault(day, {})
+    daily[day][d.category] = daily[day].get(d.category, 0) + 1
+    s["deals_last_brand"] = engine.brand(d)
+    return True
+
+
 def step(s: dict, client: CreatorsClient | None = None) -> bool:
     """Un giro di ricerca + pubblicazione. Ritorna True se ha pubblicato qualcosa."""
     _migrate(s)
@@ -86,24 +114,30 @@ def step(s: dict, client: CreatorsClient | None = None) -> bool:
     s["deals_last_scan"] = now
     client = client or CreatorsClient()
     found = engine.scan(client, cfg, s)
-    chosen = engine.pick(found, cfg, s, limit=cfg["max_per_giro"] if not force else max(cfg["max_per_giro"], 3))
+    target = cfg["max_per_giro"] if not force else max(cfg["max_per_giro"], 3)
+    rejected: set[str] = set()
     posted = 0
-    for d in chosen:
-        try:
-            path = render_deal(download(d.photo_url), d.title, d.price_txt, d.old_price_txt, d.discount,
-                               CATEGORIES[d.category]["label"], OUT / f"{d.asin}.jpg", d.basis == "WAS_PRICE")
-            bot.send_deal(cfg["canale"], path, caption(d), d.link)
-        except Exception as e:
-            print(f"[bot-offerte] {d.asin}: {e}")
-            continue
-        day = dt.datetime.now(dt.timezone(dt.timedelta(hours=1))).strftime("%Y-%m-%d")
-        s.setdefault("deals_titles", {})[engine.title_key(d)] = dt.datetime.now(dt.timezone.utc).isoformat()
-        s.setdefault("deals_seen", {})[d.asin] = dt.datetime.now(dt.timezone.utc).isoformat()
-        daily = s.setdefault("deals_daily", {})
-        daily.setdefault(day, {})
-        daily[day][d.category] = daily[day].get(d.category, 0) + 1
-        s["deals_last_brand"] = engine.brand(d)
-        posted += 1
+
+    def fill(strict: bool):
+        nonlocal posted
+        while posted < target:
+            got = engine.pick([d for d in found if d.asin not in rejected], cfg, s, limit=1, strict_brand=strict)
+            if not got:
+                return
+            if _post(s, cfg, got[0]):
+                posted += 1
+            else:
+                rejected.add(got[0].asin)       # doppione della foto o errore: ne prendo un altro, il giro non si perde
+
+    fill(True)
+    for _ in range(2):          # niente di valido? allargo la ricerca ad altre parole chiave e riprovo
+        if posted >= target:
+            break
+        known = {d.asin for d in found}
+        found += [d for d in engine.scan(client, cfg, s) if d.asin not in known]
+        fill(True)
+    if posted == 0:             # ultima spiaggia: stessa marca dell'ultima, ma mai lo stesso prodotto
+        fill(False)
     for old in sorted(s.get("deals_daily", {}))[:-3]:   # tiene solo gli ultimi giorni
         s["deals_daily"].pop(old, None)
     # storico prezzi nostro: servirà per riconoscere i veri sconti e i minimi storici

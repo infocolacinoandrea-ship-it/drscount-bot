@@ -168,7 +168,7 @@ def priority(d: Deal) -> int:
     return 2 if _BULK.search(d.full_title or d.title) else 1
 
 
-def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list[Deal]:
+def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1, strict_brand: bool = True) -> list[Deal]:
     """Sceglie a rotazione fra le categorie, in proporzione alle quote (smooth weighted round-robin):
     con casa 6, cura persona 4, elettronica 3 esce per esempio casa, cura, casa, elettronica, casa, cura...
     Dentro ogni categoria prima lo sconto più alto. Rispetta filtri, doppioni, quote e tetto giornaliero.
@@ -203,7 +203,7 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list
             if any(o.asin == d.asin or same_product(title_key(o), title_key(d)) for o in out):
                 continue
             prev = brand(out[-1]) if out else state.get("deals_last_brand")
-            if brand(d) and brand(d) == prev:
+            if strict_brand and brand(d) and brand(d) == prev:
                 continue          # mai due offerte di fila della stessa marca
             out.append(d)
             break
