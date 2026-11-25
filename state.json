@@ -314,7 +314,7 @@
   "31220": "18180462904453084",
   "31222": "18022091975956640"
  },
- "tg_offset": 487048505,
+ "tg_offset": 487048507,
  "daily": {
   "2026-11-12": 15,
   "2026-11-13": 16,
@@ -851,5 +851,49 @@
     159.99
    ]
   ]
+ },
+ "settings": {
+  "attivo": true,
+  "sconto_min": 45,
+  "sconto_max": 90,
+  "prezzo_min": 5,
+  "prezzo_max": 1500,
+  "solo_amazon": true,
+  "base_sconto": "any",
+  "ripubblica_dopo_giorni": 14,
+  "max_al_giorno": 20,
+  "max_per_giro": 2,
+  "ogni_minuti": 30,
+  "canale": "-1005617414476",
+  "categorie": {
+   "elettrodomestici": {
+    "attiva": true,
+    "max_giorno": 2
+   },
+   "abbigliamento": {
+    "attiva": true,
+    "max_giorno": 3
+   },
+   "casa": {
+    "attiva": true,
+    "max_giorno": 6
+   },
+   "cura_persona": {
+    "attiva": true,
+    "max_giorno": 4
+   },
+   "elettronica": {
+    "attiva": true,
+    "max_giorno": 3
+   },
+   "informatica": {
+    "attiva": true,
+    "max_giorno": 2
+   },
+   "infanzia": {
+    "attiva": true,
+    "max_giorno": 2
+   }
+  }
  }
 }
