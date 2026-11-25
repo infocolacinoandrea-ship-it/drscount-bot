@@ -1742,8 +1742,8 @@
   "base_sconto": "was",
   "ripubblica_dopo_giorni": 14,
   "max_al_giorno": 20,
-  "max_per_giro": 2,
-  "ogni_minuti": 30,
+  "max_per_giro": 1,
+  "ogni_minuti": 60,
   "canale": "-1005617414476",
   "categorie": {
    "elettrodomestici": {
@@ -1774,7 +1774,8 @@
     "attiva": true,
     "max_giorno": 2
    }
-  }
+  },
+  "_v": 2
  },
  "deals_wrr": {
   "cura_persona": 5,
