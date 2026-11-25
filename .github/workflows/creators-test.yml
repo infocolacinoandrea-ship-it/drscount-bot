@@ -16,4 +16,4 @@ jobs:
           CREATORS_CLIENT_ID: ${{ secrets.CREATORS_CLIENT_ID }}
           CREATORS_CLIENT_SECRET: ${{ secrets.CREATORS_CLIENT_SECRET }}
           CREATORS_VERSION: ${{ secrets.CREATORS_VERSION }}
-        run: python src/creators_probe.py
+        run: cd src && python autodeals_dryrun.py

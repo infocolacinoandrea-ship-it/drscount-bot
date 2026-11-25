@@ -1,0 +1,136 @@
+"""Trova le offerte: cerca per categoria, trasforma i risultati, applica filtri e quote."""
+import datetime as dt
+from dataclasses import dataclass
+
+from scraper import clean_title
+
+from .categories import CATEGORIES
+from .client import PARTNER_TAG, CreatorsClient
+
+
+@dataclass
+class Deal:
+    asin: str
+    title: str
+    price: float
+    old_price: float
+    discount: int
+    basis: str            # "WAS_PRICE" (prezzo precedente) o "LIST_PRICE" (prezzo consigliato)
+    seller: str
+    photo_url: str
+    category: str
+    link: str
+
+    @property
+    def price_txt(self) -> str:
+        return _eur(self.price)
+
+    @property
+    def old_price_txt(self) -> str:
+        return _eur(self.old_price)
+
+
+def _eur(x: float) -> str:
+    return f"{x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + "€"
+
+
+def clean_link(asin: str) -> str:
+    """Link breve e pulito: mostra chiaramente che va su Amazon e mantiene il tag."""
+    return f"https://www.amazon.it/dp/{asin}?tag={PARTNER_TAG}"
+
+
+def parse_item(item: dict, category: str) -> Deal | None:
+    """Trasforma un prodotto grezzo dell'API in un Deal, o None se non ha un'offerta con sconto."""
+    try:
+        listings = (item.get("offersV2") or {}).get("listings") or []
+        # la offerta "principale": quella che vince il carrello, senza Iscriviti e Risparmia
+        main = [l for l in listings if l.get("isBuyBoxWinner") and not l.get("type")] \
+            or [l for l in listings if not l.get("type")]
+        if not main:
+            return None
+        pr = main[0]["price"]
+        price = float(pr["money"]["amount"])
+        basis = pr["savingBasis"]
+        old = float(basis["money"]["amount"])
+        pct = int((pr.get("savings") or {}).get("percentage") or round((1 - price / old) * 100))
+        photo = item["images"]["primary"]["large"]["url"]
+        title = clean_title(item["itemInfo"]["title"]["displayValue"])
+        asin = item["asin"]
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        return None
+    if old <= price or not title or not photo:
+        return None
+    return Deal(asin=asin, title=title, price=price, old_price=old, discount=pct,
+                basis=basis.get("savingBasisType", ""), seller=(main[0].get("merchantInfo") or {}).get("name", ""),
+                photo_url=photo, category=category, link=clean_link(asin))
+
+
+def passes(d: Deal, cfg: dict) -> bool:
+    """Filtri generali (le quote giornaliere si applicano dopo)."""
+    if not (cfg["sconto_min"] <= d.discount <= cfg["sconto_max"]):
+        return False
+    if not (cfg["prezzo_min"] <= d.price <= cfg["prezzo_max"]):
+        return False
+    if cfg["solo_amazon"] and d.seller.lower() != "amazon":
+        return False
+    if cfg["base_sconto"] == "was" and d.basis != "WAS_PRICE":
+        return False
+    return True
+
+
+def today_counts(state: dict) -> dict:
+    """Quante offerte per categoria sono già uscite oggi (fuso orario italiano)."""
+    day = dt.datetime.now(dt.timezone(dt.timedelta(hours=1))).strftime("%Y-%m-%d")
+    return (state.get("deals_daily") or {}).get(day, {})
+
+
+def not_recent(d: Deal, state: dict, days: int) -> bool:
+    seen = (state.get("deals_seen") or {}).get(d.asin)
+    if not seen:
+        return True
+    return dt.datetime.fromisoformat(seen) < dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+
+
+def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1) -> list[Deal]:
+    """Sceglie fra i candidati rispettando tutto: filtri, doppioni, quote per categoria e tetto giornaliero.
+    Ordine: sconto più alto per prima."""
+    counts = today_counts(state)
+    total = sum(counts.values())
+    out: list[Deal] = []
+    for d in sorted(candidates, key=lambda x: -x.discount):
+        cat = cfg["categorie"].get(d.category) or {}
+        if not cat.get("attiva", False) or not passes(d, cfg) or not not_recent(d, state, cfg["ripubblica_dopo_giorni"]):
+            continue
+        if counts.get(d.category, 0) + sum(1 for o in out if o.category == d.category) >= cat.get("max_giorno", 0):
+            continue
+        if total + len(out) >= cfg["max_al_giorno"] or any(o.asin == d.asin for o in out):
+            continue
+        out.append(d)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def scan(client: CreatorsClient, cfg: dict, state: dict, per_category: int = 2) -> list[Deal]:
+    """Cerca nelle categorie attive. Per ogni categoria usa a rotazione alcune parole chiave
+    (l'indice di rotazione sta nello stato, così ogni giro guarda prodotti diversi)."""
+    rot = state.setdefault("deals_rotation", {})
+    found: list[Deal] = []
+    for cid, cat in CATEGORIES.items():
+        if not cfg["categorie"].get(cid, {}).get("attiva"):
+            continue
+        kws = cat["keywords"]
+        start = rot.get(cid, 0)
+        for i in range(per_category):
+            kw = kws[(start + i) % len(kws)]
+            try:
+                items = client.search(kw, cat["index"], min_saving=cfg["sconto_min"])
+            except RuntimeError as e:
+                print(f"[autodeals] {cid}/{kw}: {e}")
+                continue
+            for it in items:
+                d = parse_item(it, cid)
+                if d:
+                    found.append(d)
+        rot[cid] = (start + per_category) % len(kws)
+    return found
