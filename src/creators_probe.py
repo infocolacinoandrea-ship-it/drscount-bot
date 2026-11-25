@@ -24,17 +24,32 @@ def main() -> int:
     if not r.ok:
         return 1
     token = r.json()["access_token"]
-    body = {"keywords": os.getenv("PROBE_KEYWORDS", "detersivo lavatrice"), "partnerTag": "drscount06-21",
-            "itemCount": 3}
-    s = requests.post(f"{API}/searchItems", json=body, timeout=30,
-                      headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json",
-                               "x-marketplace": "www.amazon.it"})
-    print("SearchItems:", s.status_code)
-    try:
-        print(json.dumps(s.json(), indent=1, ensure_ascii=False)[:6000])
-    except ValueError:
-        print(s.text[:1500])
-    return 0 if s.ok else 1
+    hdr = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "x-marketplace": "www.amazon.it"}
+    res = ["images.primary.large", "itemInfo.title", "offersV2.listings.price",
+           "offersV2.listings.merchantInfo", "offersV2.listings.availability"]
+    tests = {
+        "A: risorse prezzo+foto": {"keywords": os.getenv("PROBE_KEYWORDS", "detersivo lavatrice"),
+                                   "partnerTag": "drscount06-21", "itemCount": 3, "resources": res},
+        "B: con sconto minimo 30%": {"keywords": "detersivo lavatrice", "partnerTag": "drscount06-21",
+                                     "itemCount": 3, "resources": res, "minSavingPercent": 30},
+        "C: recensioni": {"keywords": "detersivo lavatrice", "partnerTag": "drscount06-21", "itemCount": 1,
+                          "resources": ["itemInfo.title", "customerReviews.starRating", "customerReviews.count"]},
+    }
+    s = None
+    for name, body in tests.items():
+        s = requests.post(f"{API}/searchItems", json=body, timeout=30, headers=hdr)
+        print(f"\n=== {name}: HTTP {s.status_code}")
+        try:
+            js = s.json()
+            items = js.get("searchResult", {}).get("items")
+            if items:
+                print(json.dumps(items[0], indent=1, ensure_ascii=False)[:3500])
+                print("n. prodotti:", len(items), "| totale:", js["searchResult"].get("totalResultCount"))
+            else:
+                print(json.dumps(js, indent=1, ensure_ascii=False)[:1200])
+        except ValueError:
+            print(s.text[:1200])
+    return 0
 
 
 if __name__ == "__main__":
