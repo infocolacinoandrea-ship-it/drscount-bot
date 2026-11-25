@@ -110,9 +110,15 @@ def edit_menu(message_id: int, text: str, keyboard: dict):
         pass  # "message is not modified" se non è cambiato nulla
 
 
+def bold(text: str) -> str:
+    """I pulsanti di Telegram non hanno il grassetto: si usano le lettere "matematiche" in grassetto (𝗔𝗕𝗖)."""
+    return "".join(chr(0x1D5D4 + ord(c) - 65) if "A" <= c <= "Z" else chr(0x1D5EE + ord(c) - 97) if "a" <= c <= "z"
+                   else chr(0x1D7EC + ord(c) - 48) if "0" <= c <= "9" else c for c in text)
+
+
 def send_deal(chat_id, image: Path, caption_html: str, url: str):
     """Pubblica l'offerta su un canale: foto + testo + pulsante che apre Amazon (l'app, se installata)."""
-    kb = {"inline_keyboard": [[{"text": "🛒 CLICCA QUI PER AGGIUNGERE AL CARRELLO", "url": url, "style": "success"}]]}
+    kb = {"inline_keyboard": [[{"text": "🛒 " + bold("ACQUISTA QUI"), "url": url, "style": "success"}]]}
     with open(image, "rb") as f:
         return _api("sendPhoto", data={"chat_id": chat_id, "caption": caption_html[:1024], "parse_mode": "HTML",
                                        "reply_markup": json.dumps(kb)}, files={"photo": f})
