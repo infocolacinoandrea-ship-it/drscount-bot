@@ -11166,7 +11166,7 @@
    },
    "casa": {
     "attiva": true,
-    "max_giorno": 11
+    "max_giorno": 12
    },
    "cura_persona": {
     "attiva": true,
@@ -11185,7 +11185,8 @@
     "max_giorno": 2
    }
   },
-  "_v": 3
+  "_v": 4,
+  "casa_di_fila": 2
  },
  "deals_wrr": {
   "cura_persona": -1,
