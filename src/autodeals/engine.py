@@ -185,6 +185,8 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1, strict_
             continue
         queues.setdefault(d.category, []).append(d)
     cur = state.setdefault("deals_wrr", {})
+    n = cfg.get("casa_di_fila", 0)          # schema: n offerte di Casa di fila, poi 1 di un'altra categoria, e si ripete
+    pos = state.get("deals_pos", 0)
     out: list[Deal] = []
     while len(out) < limit and total + len(out) < cfg["max_al_giorno"]:
         avail = {}
@@ -194,10 +196,18 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1, strict_
                 avail[c] = quota
         if not avail:
             break
-        for c, w in avail.items():
+        want_casa = n > 0 and pos % (n + 1) < n
+        others = {c: w for c, w in avail.items() if c != "casa"}
+        if n > 0 and want_casa and "casa" in avail:
+            sel = {"casa": avail["casa"]}
+        elif n > 0 and not want_casa and others:
+            sel = others
+        else:                                # la categoria voluta non ha niente: si prende un'altra, il giro non si perde
+            sel = avail
+        for c, w in sel.items():
             cur[c] = cur.get(c, 0) + w
-        best = max(avail, key=lambda c: cur[c])
-        cur[best] -= sum(avail.values())
+        best = max(sel, key=lambda c: cur[c])
+        cur[best] -= sum(sel.values())
         q = queues[best]
         while q:
             d = q.pop(0)
@@ -207,7 +217,10 @@ def pick(candidates: list[Deal], cfg: dict, state: dict, limit: int = 1, strict_
             if strict_brand and brand(d) and brand(d) == prev:
                 continue          # mai due offerte di fila della stessa marca
             out.append(d)
+            if n > 0 and (best == "casa") == want_casa:
+                pos += 1
             break
+    state["deals_pos"] = pos % (n + 1) if n > 0 else 0
     return out
 
 

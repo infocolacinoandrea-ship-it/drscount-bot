@@ -29,7 +29,7 @@ assert d.link == "https://www.amazon.it/dp/B0TEST0001?tag=drscount06-21"
 bad = dict(ITEM, offersV2={"listings": [{"isBuyBoxWinner": True, "price": {"money": {"amount": 5}}}]})
 assert engine.parse_item(bad, "casa") is None   # nessuno sconto -> scartato
 
-cfg = settings.load({})
+cfg = settings.load({"settings": {"casa_di_fila": 0}})
 assert cfg["sconto_min"] == 40
 assert not engine.passes(mk("a", 30, "casa"), cfg)            # sotto il 40%
 assert not engine.passes(mk("a", 95, "casa"), cfg)            # sopra il massimo
@@ -39,7 +39,7 @@ cfg["base_sconto"] = "was"
 assert not engine.passes(mk("a", 50, "casa", basis="LIST_PRICE"), cfg)
 
 # quote per categoria e tetto giornaliero
-cfg = settings.load({"settings": {"categorie": {"elettrodomestici": {"max_giorno": 1}}, "max_al_giorno": 3}})
+cfg = settings.load({"settings": {"casa_di_fila": 0, "categorie": {"elettrodomestici": {"max_giorno": 1}}, "max_al_giorno": 3}})
 cands = [mk("e1", 60, "elettrodomestici"), mk("e2", 55, "elettrodomestici"), mk("c1", 50, "casa"),
          mk("c2", 45, "casa"), mk("c3", 41, "casa")]
 got = engine.pick(cands, cfg, {}, limit=10)
@@ -72,12 +72,12 @@ assert not engine.parse_item(it("Zaino per il laptop impermeabile"), "casa")    
 assert engine.parse_item(it("Set di pentole antiaderenti 8 pezzi", 40.0), "casa")
 # varianti dello stesso prodotto (ASIN diversi, stesso titolo): ne esce una sola
 v1, v2 = mk("v1", 60, "casa", title="Pannolini Pampers"), mk("v2", 55, "casa", title="Pannolini Pampers")
-cfg2 = settings.load({})
+cfg2 = settings.load({"settings": {"casa_di_fila": 0}})
 assert [x.asin for x in engine.pick([v1, v2, mk("v3", 50, "casa", title="Altro")], cfg2, {}, limit=5)] == ["v1", "v3"]
 st2 = {"deals_titles": {engine.title_key(v1): dt.datetime.now(dt.timezone.utc).isoformat()}}
 assert engine.pick([v2], cfg2, st2, limit=5) == []
 # rotazione fra categorie in proporzione alle quote (casa 4, cura 2, elettronica 1)
-cfg3 = settings.load({"settings": {"max_al_giorno": 50, "categorie": {c: {"attiva": False} for c in
+cfg3 = settings.load({"settings": {"casa_di_fila": 0, "max_al_giorno": 50, "categorie": {c: {"attiva": False} for c in
                                     settings.DEFAULTS["categorie"]}}})
 for c, n in (("casa", 4), ("cura_persona", 2), ("elettronica", 1)):
     cfg3["categorie"][c] = {"attiva": True, "max_giorno": n}
@@ -87,7 +87,7 @@ assert seq.count("casa") == 4 and seq.count("cura_persona") == 2 and seq.count("
 assert seq[:3] != ["casa"] * 3 and seq[0] == "casa" and "cura_persona" in seq[:3], seq   # alternate, non a blocchi
 print("sequenza:", seq)
 # casa: prima necessità e formato scorta davanti agli altri, anche con sconto più basso
-cfgc = settings.load({"settings": {"categorie": {"casa": {"max_giorno": 3}}}})
+cfgc = settings.load({"settings": {"casa_di_fila": 0, "categorie": {"casa": {"max_giorno": 3}}}})
 a = mk("x1", 70, "casa", title="Set di pentole antiaderenti 8 pezzi")
 b = mk("x2", 45, "casa", title="Finish Quantum Pastiglie Lavastoviglie, 120 Lavaggi")
 c = mk("x3", 50, "casa", title="Carta igienica Foxy 18 rotoli")
@@ -110,10 +110,20 @@ assert [x.asin for x in engine.pick([f1, f2, o1], cfgc, {}, limit=3)] == ["o1", 
 m1, m2 = mk("m1", 60, "casa", title="Dixan Detersivo Lavatrice 100"), mk("m2", 59, "casa", title="Dixan Ammorbidente 80")
 assert engine.pick([m1, m2], cfgc, {"deals_last_brand": "dixan"}, limit=2) == []
 # elettrodomestici: solo super offerte (60%+), 1 al giorno
-cfge = settings.load({})
+cfge = settings.load({"settings": {"casa_di_fila": 0}})
 assert cfge["categorie"]["elettrodomestici"]["max_giorno"] == 1 and settings.min_discount(cfge, "elettrodomestici") == 60
 assert settings.min_discount(cfge, "casa") == 40
 lav50, lav65, lav70 = (mk("w1", 50, "elettrodomestici", price=300), mk("w2", 65, "elettrodomestici", price=300),
                        mk("w3", 70, "elettrodomestici", price=400, title="Samsung Frigorifero Combinato"))
 assert [x.asin for x in engine.pick([lav50, lav65, lav70], cfge, {}, limit=3)] == ["w3"]   # il 50% non passa, ne esce 1 solo
+# schema: 2 di Casa di fila, poi 1 di altro, e si ripete
+cfgp = settings.load({"settings": {"max_al_giorno": 50}})
+assert cfgp["casa_di_fila"] == 2
+pp = [mk(f"{c}{i}", 70 - i, c) for c, n in (("casa", 8), ("cura_persona", 4), ("abbigliamento", 3), ("elettronica", 3)) for i in range(n)]
+seq2 = [x.category for x in engine.pick(pp, cfgp, {}, limit=9)]
+assert [c == "casa" for c in seq2] == [True, True, False] * 3, seq2
+# Casa senza offerte: il giro non si perde, esce un'altra categoria e lo schema riprende
+seq3 = [x.category for x in engine.pick([x for x in pp if x.category != "casa"], cfgp, {}, limit=3)]
+assert len(seq3) == 3 and "casa" not in seq3
+print("schema:", seq2)
 print("tutto ok")

@@ -7,7 +7,7 @@ from .categories import CATEGORIES
 # nome breve -> (impostazione, passo, minimo, massimo)
 STEPS = {"smin": ("sconto_min", 5, 5, 85), "smax": ("sconto_max", 5, 20, 95), "pmin": ("prezzo_min", 5, 0, 500),
          "pmax": ("prezzo_max", 50, 20, 5000), "tot": ("max_al_giorno", 2, 1, 100),
-         "rip": ("ripubblica_dopo_giorni", 1, 1, 60), "giro": ("max_per_giro", 1, 1, 10),
+         "rip": ("ripubblica_dopo_giorni", 1, 1, 60), "giro": ("max_per_giro", 1, 1, 10), "cdf": ("casa_di_fila", 1, 0, 4),
          "ogni": ("ogni_minuti", 10, 10, 240)}
 
 
@@ -44,11 +44,13 @@ def render(page: str, cfg: dict) -> tuple[str, dict]:
         return (f"⏱ QUANTE E QUANDO\n\n• Al giorno al massimo: {cfg['max_al_giorno']} offerte (in tutto)\n"
                 f"• A ogni controllo ne pubblico fino a: {cfg['max_per_giro']}\n"
                 f"• Cerco nuove offerte ogni: {cfg['ogni_minuti']} minuti\n"
+                f"• Schema: {str(cfg['casa_di_fila']) + ' di Casa di fila, poi 1 di un altra categoria' if cfg['casa_di_fila'] else 'solo rotazione per quote'}\n"
                 f"• Lo stesso prodotto lo ripubblico dopo: {cfg['ripubblica_dopo_giorni']} giorni",
                 {"inline_keyboard": [
                     _pair("➖ Al giorno −2", "tot-", "➕ Al giorno +2", "tot+"),
                     _pair("➖ Per controllo −1", "giro-", "➕ Per controllo +1", "giro+"),
                     _pair("➖ Ogni −10 min", "ogni-", "➕ Ogni +10 min", "ogni+"),
+                    _pair("➖ Casa di fila −1", "cdf-", "➕ Casa di fila +1", "cdf+"),
                     _pair("➖ Ripubblica −1 giorno", "rip-", "➕ Ripubblica +1 giorno", "rip+"), _back()]})
     if page == "filtri":
         was = cfg["base_sconto"] == "was"

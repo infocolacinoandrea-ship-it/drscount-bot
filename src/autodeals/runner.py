@@ -74,6 +74,11 @@ def _migrate(s: dict):
     if saved.get("_v", 0) < 3:       # 25/11: elettrodomestici solo super offerte (min 60%, 1 al giorno)
         saved.setdefault("categorie", {}).setdefault("elettrodomestici", {}).update({"max_giorno": 1, "sconto_min": 60})
         saved["_v"] = 3
+    if saved.get("_v", 0) < 4:       # 26/11: Casa 2 di fila, poi 1 di altro; più Casa al giorno
+        saved["casa_di_fila"] = 2
+        saved.setdefault("categorie", {}).setdefault("casa", {})["max_giorno"] = 12
+        saved["max_al_giorno"] = max(saved.get("max_al_giorno", 20), 20)
+        saved["_v"] = 4
 
 
 def _post(s: dict, cfg: dict, d: engine.Deal) -> bool:
